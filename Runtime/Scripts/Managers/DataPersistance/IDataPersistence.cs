@@ -1,4 +1,4 @@
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public interface IDataPersistence
     {

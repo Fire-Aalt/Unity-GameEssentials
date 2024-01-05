@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public static class ScenesUtil
     {

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Cysharp.Threading.Tasks;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public static class BootLoader
     {

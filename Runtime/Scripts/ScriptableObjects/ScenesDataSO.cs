@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     [CreateAssetMenu(menuName = "Data/Scenes Data")]
     public class ScenesDataSO : ScriptableObject

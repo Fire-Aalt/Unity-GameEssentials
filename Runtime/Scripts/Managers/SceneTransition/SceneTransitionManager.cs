@@ -4,7 +4,7 @@ using MoreMountains.Tools;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public class SceneTransitionManager : MMSingleton<SceneTransitionManager>
     {

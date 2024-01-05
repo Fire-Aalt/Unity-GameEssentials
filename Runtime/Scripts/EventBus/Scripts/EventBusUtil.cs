@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     /// <summary>
     /// Contains methods and properties related to event buses and event types in the Unity application.

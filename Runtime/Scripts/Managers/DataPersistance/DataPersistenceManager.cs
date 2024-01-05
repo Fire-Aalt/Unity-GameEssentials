@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using Debug = UnityEngine.Debug;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public class DataPersistenceManager : MMSingleton<DataPersistenceManager>
     {

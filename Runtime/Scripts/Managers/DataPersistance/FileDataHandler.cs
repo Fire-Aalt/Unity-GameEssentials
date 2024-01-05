@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.IO;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public class FileDataHandler
     {

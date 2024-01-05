@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public interface IEventBinding<T> {
         public Action<T> OnEvent { get; set; }

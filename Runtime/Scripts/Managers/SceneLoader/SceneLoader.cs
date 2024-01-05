@@ -4,7 +4,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace RenderDream.UnityManager
+namespace RenderDream.GameEssentials
 {
     public class SceneLoader : MMSingleton<SceneLoader>
     {
