@@ -4,7 +4,7 @@ using System.IO;
 
 namespace RenderDream.GameEssentials
 {
-    public class FileDataHandler
+    public class FileDataHandler<T> where T : IGameData
     {
         private readonly string dataDirPath = "";
         private readonly string dataFileName = "";
@@ -18,42 +18,44 @@ namespace RenderDream.GameEssentials
             this.useEncryption = useEncryption;
         }
 
-        public GameData Load()
+        public T Load(T template)
         {
-            // use Path.Combine to account for different OS's having different path separators
             string fullPath = Path.Combine(dataDirPath, dataFileName);
-            GameData loadedData = null;
+            T loadedData = template;
+
             if (File.Exists(fullPath))
             {
                 try
                 {
-                    // load the serialized data from the file
                     string dataToLoad = "";
-                    using (FileStream stream = new FileStream(fullPath, FileMode.Open))
+
+                    using (FileStream stream = new(fullPath, FileMode.Open))
                     {
-                        using (StreamReader reader = new StreamReader(stream))
+                        using (StreamReader reader = new(stream))
                         {
                             dataToLoad = reader.ReadToEnd();
                         }
                     }
-                    // optionally decrypt the data
+
                     if (useEncryption)
                     {
                         dataToLoad = EncryptDecrypt(dataToLoad);
                     }
 
-                    // deserialize the data from Json back into the C# object
-                    loadedData = JsonUtility.FromJson<GameData>(dataToLoad);
+                    // Use overwrite for deserialization
+                    JsonUtility.FromJsonOverwrite(dataToLoad, loadedData);
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("Error occured when trying to load data from file: " + fullPath + "\n" + e);
+                    Debug.LogError("Error occurred when trying to load data from file: " + fullPath + "\n" + e);
+                    return default;
                 }
             }
+
             return loadedData;
         }
 
-        public void Save(GameData data)
+        public void Save(T data)
         {
             // use Path.Combine to account for different OS's having different path separators
             string fullPath = Path.Combine(dataDirPath, dataFileName);
@@ -72,9 +74,9 @@ namespace RenderDream.GameEssentials
                 }
 
                 // write the serialized data to the file
-                using (FileStream stream = new FileStream(fullPath, FileMode.Create))
+                using (FileStream stream = new(fullPath, FileMode.Create))
                 {
-                    using (StreamWriter writer = new StreamWriter(stream))
+                    using (StreamWriter writer = new(stream))
                     {
                         writer.Write(dataToStore);
                     }

@@ -87,7 +87,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: DataPersistance
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5714090888200802822, guid: 0a8b6c7fbd0b6de45974c2257f13c1be, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

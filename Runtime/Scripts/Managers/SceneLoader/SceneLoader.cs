@@ -1,26 +1,31 @@
 using Cysharp.Threading.Tasks;
 using MoreMountains.Tools;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace RenderDream.GameEssentials
 {
-    public class SceneLoader : MMSingleton<SceneLoader>
+    public class SceneLoader : Singleton<SceneLoader>
     {
-        [field: SerializeField, InlineEditor]
-        public ScenesDataSO ScenesData { get; private set; }
-
         public static bool IsTransitioning { get; private set; }
+
+        private ScenesDataSO _scenesData;
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            _scenesData = BootLoader.ScenesData;
+        }
 
         public async UniTask LoadSceneWithTransition(SceneType sceneType)
         {
             // Start full transition
             IsTransitioning = true;
-            DataPersistenceManager.Current.SaveGame();
+            EventBus<SaveGameEvent>.Raise(new SaveGameEvent());
             await SceneTransitionManager.Current.TransitionIn();
 
-            await LoadScene(ScenesData.GetSceneDependencies(sceneType));
+            await LoadScene(_scenesData.GetSceneDependencies(sceneType));
         }
 
         public async UniTask LoadScene(SceneDependencies sceneDependencies)
@@ -30,7 +35,7 @@ namespace RenderDream.GameEssentials
             MMSoundManager.Current.FreeAllLoopingSounds();
             //GameManager.Current.UpdateGameState(GameState.Transition);
 
-            Scene bootLoader = ScenesData.bootLoaderScene.LoadedScene;
+            Scene bootLoader = _scenesData.bootLoaderScene.LoadedScene;
             SceneManager.SetActiveScene(bootLoader);
             SceneTransitionManager.Current.ChangeTransitionCameraState(isActive: true);
 
@@ -80,5 +85,10 @@ namespace RenderDream.GameEssentials
     public struct ScenesLoadedEvent : IEvent
     {
         public SceneDependencies sceneDependencies;
+    }
+
+    public struct SaveGameEvent : IEvent
+    {
+
     }
 }

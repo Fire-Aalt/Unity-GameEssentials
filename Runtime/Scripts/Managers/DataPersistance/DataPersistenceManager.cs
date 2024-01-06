@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.SceneManagement;
-using MoreMountains.Tools;
 using Sirenix.OdinInspector;
 using System.Diagnostics;
 using System.IO;
@@ -10,24 +9,27 @@ using Debug = UnityEngine.Debug;
 
 namespace RenderDream.GameEssentials
 {
-    public class DataPersistenceManager : MMSingleton<DataPersistenceManager>
+    public abstract class DataPersistenceManager<T> : Singleton<DataPersistenceManager<T>> where T : IGameData
     {
         [Header("Debugging")]
-        [SerializeField] private bool initializeDataIfNull = false;
+        [SerializeField] private bool initializeDataIfNull = true;
 
         [Header("File Storage Config")]
-        [SerializeField] private string fileName;
-        [SerializeField] private bool useEncryption;
+        [SerializeField] private string fileName = "GameData.data";
+        [SerializeField] private bool useEncryption = false;
 
-        private GameData gameData;
-        private List<IDataPersistence> dataPersistenceObjects = new();
-        private FileDataHandler dataHandler;
+        private T _gameData;
+        private T _gameDataTemplate;
+        private List<IDataPersistence<T>> _dataPersistenceObjects = new();
+        private FileDataHandler<T> _dataHandler;
+        private EventBinding<SaveGameEvent> _saveGameBinding;
 
         protected override void Awake()
         {
             base.Awake();
 
-            dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
+            _gameDataTemplate = NewGameData();
+            _dataHandler = new FileDataHandler<T>(Application.persistentDataPath, fileName, useEncryption);
         }
 
         [Button(size: ButtonSizes.Large)]
@@ -39,26 +41,24 @@ namespace RenderDream.GameEssentials
             Process.Start(processStartInfo);
         }
 
-        public void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            dataPersistenceObjects = FindAllDataPersistenceObjects();
-            LoadGame(dataPersistenceObjects);
-        }
+        public abstract T NewGameData();
 
         public void NewGame()
         {
-            gameData = new GameData();
+            _gameData = NewGameData();
+            _gameData.ResetToDefault();
         }
 
-        public void LoadGame(List<IDataPersistence> dataPersistenceObjects)
+        public void LoadGame(List<IDataPersistence<T>> dataPersistenceObjects)
         {
             // load any saved data from a file using the data handler
-            gameData = dataHandler.Load();
+            _gameData = _dataHandler.Load(_gameDataTemplate);
 
             // start a new game if the data is null and we're configured to initialize data for debugging purposes
-            if (gameData == null && initializeDataIfNull)
+            if (_gameData == null && initializeDataIfNull)
             {
                 NewGame();
+                Debug.Log("NewGame");
             }
 
             // if no data can be loaded, don't continue
@@ -69,9 +69,9 @@ namespace RenderDream.GameEssentials
             }
 
             // push the loaded data to all other scripts that need it
-            foreach (IDataPersistence dataPersistenceObj in dataPersistenceObjects)
+            foreach (IDataPersistence<T> dataPersistenceObj in dataPersistenceObjects)
             {
-                dataPersistenceObj.LoadData(gameData);
+                dataPersistenceObj.LoadData(_gameData);
             }
         }
 
@@ -85,13 +85,13 @@ namespace RenderDream.GameEssentials
             }
 
             // pass the data to other scripts so they can update it
-            foreach (IDataPersistence dataPersistenceObj in dataPersistenceObjects)
+            foreach (IDataPersistence<T> dataPersistenceObj in _dataPersistenceObjects)
             {
-                dataPersistenceObj.SaveData(gameData);
+                dataPersistenceObj.SaveData(_gameData);
             }
 
             // save that data to a file using the data handler
-            dataHandler.Save(gameData);
+            _dataHandler.Save(_gameData);
         }
 
         private void OnApplicationQuit()
@@ -99,28 +99,35 @@ namespace RenderDream.GameEssentials
             SaveGame();
         }
 
-        private List<IDataPersistence> FindAllDataPersistenceObjects()
+        private List<IDataPersistence<T>> FindAllDataPersistenceObjects()
         {
-            IEnumerable<IDataPersistence> dataPersistenceObjects = 
+            IEnumerable<IDataPersistence<T>> dataPersistenceObjects = 
                 FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-                .OfType<IDataPersistence>();
+                .OfType<IDataPersistence<T>>();
 
-            return new List<IDataPersistence>(dataPersistenceObjects);
+            return new List<IDataPersistence<T>>(dataPersistenceObjects);
         }
 
-        public bool HasGameData()
+        public bool HasGameData() => _gameData != null;
+
+        public void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            return gameData != null;
+            _dataPersistenceObjects = FindAllDataPersistenceObjects();
+            LoadGame(_dataPersistenceObjects);
         }
 
         private void OnEnable()
         {
+            _saveGameBinding = new EventBinding<SaveGameEvent>(SaveGame);
+
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            EventBus<SaveGameEvent>.Register(_saveGameBinding);
         }
 
         private void OnDisable()
         {
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
         }
     }
 }
