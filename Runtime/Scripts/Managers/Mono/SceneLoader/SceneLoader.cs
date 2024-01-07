@@ -54,7 +54,7 @@ namespace RenderDream.GameEssentials
             // Unload scenes
             for (int i = 0; i < scenesToUnload.Count; i++)
             {
-                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene);
+                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scenesToUnload[i]);
                 await UniTask.WaitUntil(() => asyncOperation.isDone);
             }
 
