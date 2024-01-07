@@ -57,7 +57,7 @@ sysinfo.txt
 
 # Github meta data files
 LICENSE.meta
-README.meta
+README.md.meta
 
 # Builds
 *.apk
