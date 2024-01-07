@@ -55,9 +55,8 @@ ExportedObj/
 # Unity3D generated file on crash reports
 sysinfo.txt
 
-# Unity game save file
-GameData.cs
-GameData.cs.meta
+# LICENSE meta data
+LICENSE.meta
 
 # Builds
 *.apk
