@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using MoreMountains.Tools;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 namespace RenderDream.GameEssentials
 {
@@ -39,15 +40,22 @@ namespace RenderDream.GameEssentials
             SceneManager.SetActiveScene(bootLoader);
             SceneTransitionManager.Current.ChangeTransitionCameraState(isActive: true);
 
-            // Unload current scenes except for _BootLoader
+            // Find scenes to Unload (except for _BootLoader)
+            List<Scene> scenesToUnload = new();
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 Scene scene = SceneManager.GetSceneAt(i);
                 if (scene != bootLoader)
                 {
-                    AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene);
-                    await UniTask.WaitUntil(() => asyncOperation.isDone);
+                    scenesToUnload.Add(scene);
                 }
+            }
+
+            // Unload scenes
+            for (int i = 0; i < scenesToUnload.Count; i++)
+            {
+                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scene);
+                await UniTask.WaitUntil(() => asyncOperation.isDone);
             }
 
             // Load main scene
