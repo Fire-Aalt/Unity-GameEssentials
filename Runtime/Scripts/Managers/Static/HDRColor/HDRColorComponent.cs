@@ -135,7 +135,14 @@ namespace RenderDream.GameEssentials
                 switch (lerpMode)
                 {
                     case FinalIntensity.Zero:
-                        endValues[i] = 0f;
+                        if (_image != null)
+                        {
+                            endValues[i] = -10f;
+                        }
+                        else
+                        {
+                            endValues[i] = 0f;
+                        }
                         break;
                     case FinalIntensity.Default:
                         endValues[i] = _colorProperties[i].defaultIntensity;
