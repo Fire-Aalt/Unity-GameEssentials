@@ -24,14 +24,6 @@ namespace RenderDream.GameEssentials
         private FileDataHandler<T> _dataHandler;
         private EventBinding<SaveGameEvent> _saveGameBinding;
 
-        protected override void Awake()
-        {
-            base.Awake();
-
-            _gameDataTemplate = NewGameData();
-            _dataHandler = new FileDataHandler<T>(Application.persistentDataPath, fileName, useEncryption);
-        }
-
         [Button(size: ButtonSizes.Large)]
         public void OpenSaveFile()
         {
@@ -39,6 +31,17 @@ namespace RenderDream.GameEssentials
 
             ProcessStartInfo processStartInfo = new("devenv.exe", $"/edit \"{filePath}\"");
             Process.Start(processStartInfo);
+        }
+
+        protected override void Awake()
+        {
+            base.Awake();
+
+            _gameDataTemplate = NewGameData();
+            _dataHandler = new FileDataHandler<T>(Application.persistentDataPath, fileName, useEncryption);
+
+            _dataPersistenceObjects = FindAllDataPersistenceObjects();
+            LoadGame(_dataPersistenceObjects);
         }
 
         public abstract T NewGameData();

@@ -17,7 +17,6 @@ namespace RenderDream.GameEssentials
         }
 
         static void Clear() {
-            Debug.Log($"Clearing {typeof(T).Name} bindings");
             bindings.Clear();
         }
     }
