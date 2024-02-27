@@ -1,6 +1,6 @@
 namespace RenderDream.GameEssentials
 {
-    public interface IDataPersistence<T> where T : IGameData
+    public interface IDataPersistence<T> where T : DataModel
     {
         void LoadData(T data);
 

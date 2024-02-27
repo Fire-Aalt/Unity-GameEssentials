@@ -1,11 +1,12 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-// Class to handle registering and accessing objects by GUID
 namespace RenderDream.GameEssentials
 {
+    /// <summary>
+    /// Class to handle registering and accessing objects by GUID
+    /// </summary>
     public class GuidManager
     {
         // for each GUID we need to know the Game Object it references

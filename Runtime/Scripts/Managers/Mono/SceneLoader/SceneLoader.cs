@@ -76,6 +76,7 @@ namespace RenderDream.GameEssentials
         {
             // Set active scene
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneDependencies.mainScene.Name));
+            EventBus<LoadGameEvent>.Raise(new LoadGameEvent());
             await UniTask.WaitForEndOfFrame(this);
 
             // Notify everyone
@@ -95,8 +96,6 @@ namespace RenderDream.GameEssentials
         public SceneDependencies sceneDependencies;
     }
 
-    public struct SaveGameEvent : IEvent
-    {
-
-    }
+    public struct SaveGameEvent : IEvent { }
+    public struct LoadGameEvent : IEvent { }
 }
