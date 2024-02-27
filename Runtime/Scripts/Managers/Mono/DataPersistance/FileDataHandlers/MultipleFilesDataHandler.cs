@@ -29,6 +29,11 @@ namespace RenderDream.GameEssentials
             SaveToFile(data, GetRelativePath(profileId));
         }
 
+        public void DeleteSave(int profileId)
+        {
+            DeleteFile(GetRelativePath(profileId));
+        }
+
         public Dictionary<int, T> LoadAllProfiles()
         {
             var profileDictionary = new Dictionary<int, T>();

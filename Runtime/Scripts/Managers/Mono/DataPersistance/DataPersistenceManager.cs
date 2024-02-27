@@ -5,6 +5,7 @@ using Sirenix.OdinInspector;
 using System;
 using System.IO;
 using System.Diagnostics;
+using UnityEditor;
 
 namespace RenderDream.GameEssentials
 {
@@ -31,8 +32,8 @@ namespace RenderDream.GameEssentials
         private string _profileFileName = "game.data";
 
         [Title("Encryption")]
-        [SerializeField] private string _encryptionKey = "";
         [SerializeField] private bool _useEncryption = false;
+        [SerializeField, ReadOnly] private string _encryptionKey = Guid.NewGuid().ToString();
 
         private T1 _settingsData;
         private T2 _gameData;
@@ -51,8 +52,22 @@ namespace RenderDream.GameEssentials
             return pattern.Contains(MultipleFilesDataHandler<T2>.ID_LOOKUP);
         }
 
+        [Title("Open Actions")]
         [Button(size: ButtonSizes.Large)]
-        public void OpenRecentSaveFile()
+        private void OpenSavesFolder()
+        {
+            string path = Path.GetFullPath(Application.persistentDataPath);
+            ProcessStartInfo startInfo = new()
+            {
+                Arguments = path,
+                FileName = "explorer.exe"
+            };
+            Process.Start(startInfo);
+        }
+
+
+        [Button(size: ButtonSizes.Large)]
+        private void OpenRecentSaveFile()
         {
             if (_gameDataHandler == null)
             {
@@ -153,6 +168,11 @@ namespace RenderDream.GameEssentials
                 _gameData.lastUpdated = DateTime.Now.ToBinary();
                 _gameDataHandler.Save(_gameData, _selectedProfileId);
             }
+        }
+
+        public void DeleteProfileData(int profileId)
+        {
+            _gameDataHandler.DeleteSave(profileId);
         }
 
         public void ChangeSelectedProfileId(int newProfileId)
