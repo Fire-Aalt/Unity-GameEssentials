@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using UnityEditor;
+using UnityEngine.SceneManagement;
 
 namespace RenderDream.GameEssentials
 {
@@ -45,6 +46,7 @@ namespace RenderDream.GameEssentials
         private EventBinding<LoadGameEvent> _loadGameBinding;
         private EventBinding<SaveGameEvent> _saveGameBinding;
 
+        private IEnumerable<MonoBehaviour> _loadedMonoBehaviors;
         private int _selectedProfileId;
 
         protected bool IsPatternValid(string pattern)
@@ -128,7 +130,9 @@ namespace RenderDream.GameEssentials
             }
 
             var monoBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            _settingsDataPersistenceObjects = FindDataPersistenceObjects<T1>(monoBehaviours);
+            var monoBehaviorsToLoad = monoBehaviours.Except(_loadedMonoBehaviors);
+            
+            _settingsDataPersistenceObjects = FindDataPersistenceObjects<T1>(monoBehaviorsToLoad);
             if (_settingsData != null)
             {
                 foreach (IDataPersistence<T1> dataPersistenceObj in _settingsDataPersistenceObjects)
@@ -136,7 +140,7 @@ namespace RenderDream.GameEssentials
                     dataPersistenceObj.LoadData(_settingsData);
                 }
             }
-            _gameDataPersistenceObjects = FindDataPersistenceObjects<T2>(monoBehaviours);
+            _gameDataPersistenceObjects = FindDataPersistenceObjects<T2>(monoBehaviorsToLoad);
             if (_gameData != null)
             {
                 foreach (IDataPersistence<T2> dataPersistenceObj in _gameDataPersistenceObjects)
@@ -144,6 +148,7 @@ namespace RenderDream.GameEssentials
                     dataPersistenceObj.LoadData(_gameData);
                 }
             }
+            _loadedMonoBehaviors = monoBehaviours;
         }
 
         public void SaveGame()
@@ -198,23 +203,28 @@ namespace RenderDream.GameEssentials
 
         protected void OnEnable()
         {
-            _loadGameBinding = new EventBinding<LoadGameEvent>(LoadGame);
             _saveGameBinding = new EventBinding<SaveGameEvent>(SaveGame);
 
-            EventBus<LoadGameEvent>.Register(_loadGameBinding);
             EventBus<SaveGameEvent>.Register(_saveGameBinding);
+            SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
         protected void OnDisable()
         {
-            EventBus<LoadGameEvent>.Deregister(_loadGameBinding);
             EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+        }
+
+        protected void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            LoadGame();
         }
 
         protected void OnApplicationQuit()
         {
             SaveGame();
         }
+
 
         protected List<IDataPersistence<T>> FindDataPersistenceObjects<T>(IEnumerable<MonoBehaviour> monoBehaviours) where T : DataModel
         {
