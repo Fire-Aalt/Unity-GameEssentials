@@ -23,6 +23,8 @@ namespace RenderDream.GameEssentials
             }
 
             SceneManager.LoadScene(ScenesData.bootLoaderScene.Path, LoadSceneMode.Single);
+            EventBus<LoadGameEvent>.Raise(new LoadGameEvent());
+
             await UniTask.WaitUntil(() => SceneLoader.Current != null);
 
             SceneDependencies firstSceneDependencies = GetFirstSceneDependencies();
