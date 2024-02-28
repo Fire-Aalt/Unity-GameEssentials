@@ -5,7 +5,6 @@ using Sirenix.OdinInspector;
 using System;
 using System.IO;
 using System.Diagnostics;
-using UnityEditor;
 using UnityEngine.SceneManagement;
 
 namespace RenderDream.GameEssentials
@@ -22,7 +21,7 @@ namespace RenderDream.GameEssentials
         [SerializeField] private bool _multipleProfiles = true;
 
         [InfoBox("{id} refers to profileId which will be used for lookup")]
-        [SerializeField, ShowIf("_multipleProfiles"), ValidateInput("IsPatternValid")] 
+        [SerializeField, ShowIf("_multipleProfiles"), ValidateInput("IsPatternValid")]
         private string _profileDirectoryNamePattern = "profile{id}";
         [SerializeField, ShowIf("_multipleProfiles"), ValidateInput("IsPatternValid")]
         private string _profileFileNamePattern = "game{id}.data";
@@ -38,15 +37,12 @@ namespace RenderDream.GameEssentials
 
         private T1 _settingsData;
         private T2 _gameData;
-        private List<IDataPersistence<T1>> _settingsDataPersistenceObjects = new();
-        private List<IDataPersistence<T2>> _gameDataPersistenceObjects = new();
         private SingleFileDataHandler<T1> _settingsDataHandler;
         private MultipleFilesDataHandler<T2> _gameDataHandler;
+        public Dictionary<int, DataPersistenceObjects<T1, T2>> _sceneDataObjects;
 
-        private EventBinding<LoadGameEvent> _loadGameBinding;
         private EventBinding<SaveGameEvent> _saveGameBinding;
 
-        private IEnumerable<MonoBehaviour> _loadedMonoBehaviors;
         private int _selectedProfileId;
 
         protected bool IsPatternValid(string pattern)
@@ -104,6 +100,7 @@ namespace RenderDream.GameEssentials
                 _encryptionKey, _useEncryption, _settingsFileName);
             _gameDataHandler = new MultipleFilesDataHandler<T2>(Application.persistentDataPath,
                 _encryptionKey, _useEncryption, profileDirectoryPattern, profileFilePattern);
+            _sceneDataObjects = new Dictionary<int, DataPersistenceObjects<T1, T2>>();
 
             if (_multipleProfiles)
             {
@@ -118,6 +115,24 @@ namespace RenderDream.GameEssentials
         {
             if (_disableDataPersistence) return;
 
+            (var settingsDataObjs, var gameDataObjs) = GetAllDataObjs();
+
+            Load(settingsDataObjs, gameDataObjs);
+        }
+
+        public void LoadGame(Scene scene)
+        {
+            if (_disableDataPersistence) return;
+
+            var dataObjects = new DataPersistenceObjects<T1, T2>();
+            dataObjects.Init(scene);
+            _sceneDataObjects.Add(scene.handle, dataObjects);
+
+            Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
+        }
+
+        protected void Load(List<IDataPersistence<T1>> settingsDataObjs, List<IDataPersistence<T2>> gameDataObjs)
+        {
             _settingsData = _settingsDataHandler.Load();
             if (_settingsData == null)
             {
@@ -129,46 +144,41 @@ namespace RenderDream.GameEssentials
                 _gameData = NewGameData();
             }
 
-            var monoBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-            var monoBehaviorsToLoad = monoBehaviours.Except(_loadedMonoBehaviors);
-            
-            _settingsDataPersistenceObjects = FindDataPersistenceObjects<T1>(monoBehaviorsToLoad);
             if (_settingsData != null)
             {
-                foreach (IDataPersistence<T1> dataPersistenceObj in _settingsDataPersistenceObjects)
+                foreach (IDataPersistence<T1> settingsDataObj in settingsDataObjs)
                 {
-                    dataPersistenceObj.LoadData(_settingsData);
+                    settingsDataObj.LoadData(_settingsData);
                 }
             }
-            _gameDataPersistenceObjects = FindDataPersistenceObjects<T2>(monoBehaviorsToLoad);
             if (_gameData != null)
             {
-                foreach (IDataPersistence<T2> dataPersistenceObj in _gameDataPersistenceObjects)
+                foreach (IDataPersistence<T2> gameDataObj in gameDataObjs)
                 {
-                    dataPersistenceObj.LoadData(_gameData);
+                    gameDataObj.LoadData(_gameData);
                 }
             }
-            _loadedMonoBehaviors = monoBehaviours;
         }
 
         public void SaveGame()
         {
             if (_disableDataPersistence) return;
 
+            (var settingsDataObjs, var gameDataObjs) = GetAllDataObjs();
             if (_settingsData != null)
             {
-                foreach (IDataPersistence<T1> dataPersistenceObj in _settingsDataPersistenceObjects)
+                foreach (IDataPersistence<T1> settingsDataObj in settingsDataObjs)
                 {
-                    dataPersistenceObj.SaveData(_settingsData);
+                    settingsDataObj.SaveData(_settingsData);
                 }
                 _settingsData.lastUpdated = DateTime.Now.ToBinary();
                 _settingsDataHandler.Save(_settingsData);
             }
             if (_gameData != null)
             {
-                foreach (IDataPersistence<T2> dataPersistenceObj in _gameDataPersistenceObjects)
+                foreach (IDataPersistence<T2> gameDataObj in gameDataObjs)
                 {
-                    dataPersistenceObj.SaveData(_gameData);
+                    gameDataObj.SaveData(_gameData);
                 }
                 _gameData.lastUpdated = DateTime.Now.ToBinary();
                 _gameDataHandler.Save(_gameData, _selectedProfileId);
@@ -207,17 +217,27 @@ namespace RenderDream.GameEssentials
 
             EventBus<SaveGameEvent>.Register(_saveGameBinding);
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
         }
 
         protected void OnDisable()
         {
             EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
             SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
         }
 
         protected void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            LoadGame();
+            LoadGame(scene);
+        }
+
+        protected void HandleSceneUnloaded(Scene scene)
+        {
+            if (_sceneDataObjects.ContainsKey(scene.handle))
+            {
+                _sceneDataObjects.Remove(scene.handle);
+            }
         }
 
         protected void OnApplicationQuit()
@@ -225,13 +245,35 @@ namespace RenderDream.GameEssentials
             SaveGame();
         }
 
-
-        protected List<IDataPersistence<T>> FindDataPersistenceObjects<T>(IEnumerable<MonoBehaviour> monoBehaviours) where T : DataModel
+        protected (List<IDataPersistence<T1>>, List<IDataPersistence<T2>>) GetAllDataObjs()
         {
-            IEnumerable<IDataPersistence<T>> dataPersistenceObjects =
-                monoBehaviours.OfType<IDataPersistence<T>>();
+            List<IDataPersistence<T1>> settingsDataObjs = new();
+            List<IDataPersistence<T2>> gameDataObjs = new();
+            foreach (var pair in _sceneDataObjects)
+            {
+                settingsDataObjs.AddRange(pair.Value.settingsDataObjs);
+                gameDataObjs.AddRange(pair.Value.gameDataObjs);
+            }
+            return (settingsDataObjs, gameDataObjs);
+        }
 
-            return new List<IDataPersistence<T>>(dataPersistenceObjects);
+    }
+
+    [System.Serializable]
+    public class DataPersistenceObjects<T1, T2> where T1 : SettingsDataModel where T2 : GameDataModel
+    {
+        public List<IDataPersistence<T1>> settingsDataObjs;
+        public List<IDataPersistence<T2>> gameDataObjs;
+
+        public void Init(Scene scene)
+        {
+            var roots = scene.GetRootGameObjects();
+            foreach (var root in roots)
+            {
+                IEnumerable<MonoBehaviour> monos = root.GetComponentsInChildren<MonoBehaviour>(true);
+                settingsDataObjs = new List<IDataPersistence<T1>>(monos.OfType<IDataPersistence<T1>>());
+                gameDataObjs = new List<IDataPersistence<T2>>(monos.OfType<IDataPersistence<T2>>());
+            }
         }
     }
 }
