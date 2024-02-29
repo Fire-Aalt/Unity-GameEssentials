@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using MoreMountains.Tools;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
@@ -16,20 +15,20 @@ namespace RenderDream.GameEssentials
         {
             base.Awake();
 
-            _scenesData = BootLoader.ScenesData;
+            _scenesData = ScenesDataSO.Instance;
         }
 
-        public async UniTask LoadSceneWithTransition(SceneType sceneType)
+        public async UniTask LoadSceneWithTransition(SceneType sceneType, bool reloadScenes = false)
         {
             // Start full transition
             IsTransitioning = true;
             EventBus<SaveGameEvent>.Raise(new SaveGameEvent());
             await SceneTransitionManager.Current.TransitionIn();
 
-            await LoadScene(_scenesData.GetSceneDependencies(sceneType));
+            await LoadScene(_scenesData.GetSceneDependencies(sceneType), reloadScenes);
         }
 
-        public async UniTask LoadScene(SceneDependencies sceneDependencies)
+        public async UniTask LoadScene(SceneDependencies sceneDependencies, bool reloadScenes = false)
         {
             // Start shallow transition
             IsTransitioning = true;
@@ -47,26 +46,27 @@ namespace RenderDream.GameEssentials
                 Scene scene = SceneManager.GetSceneAt(i);
                 if (scene != bootLoader)
                 {
-                    scenesToUnload.Add(scene);
+                    if (reloadScenes || !sceneDependencies.IsSceneDependent(scene))
+                    {
+                        scenesToUnload.Add(scene);
+                    }
                 }
             }
 
             // Unload scenes
             for (int i = 0; i < scenesToUnload.Count; i++)
             {
-                AsyncOperation asyncOperation = SceneManager.UnloadSceneAsync(scenesToUnload[i]);
-                await UniTask.WaitUntil(() => asyncOperation.isDone);
+                await SceneManager.UnloadSceneAsync(scenesToUnload[i]);
             }
 
-            // Load main scene
-            AsyncOperation mainSceneAsyncOperation = SceneManager.LoadSceneAsync(sceneDependencies.mainScene.Name, LoadSceneMode.Additive);
-            await UniTask.WaitUntil(() => mainSceneAsyncOperation.isDone);
-
-            // Load additive scenes
-            foreach (var additiveScene in sceneDependencies.additiveScenes)
+            // Load dependent scenes
+            var dependentScenes = sceneDependencies.DependentScenes;
+            for (int i = 0; i < dependentScenes.Count; i++)
             {
-                AsyncOperation asyncOperation = SceneManager.LoadSceneAsync(additiveScene.Name, LoadSceneMode.Additive);
-                await UniTask.WaitUntil(() => asyncOperation.isDone);
+                if (!dependentScenes[i].LoadedScene.IsValid())
+                {
+                    await SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
+                }
             }
 
             await InitializeScene(sceneDependencies);
@@ -75,8 +75,7 @@ namespace RenderDream.GameEssentials
         private async UniTask InitializeScene(SceneDependencies sceneDependencies)
         {
             // Set active scene
-            SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneDependencies.mainScene.Name));
-            EventBus<LoadGameEvent>.Raise(new LoadGameEvent());
+            SceneManager.SetActiveScene(SceneManager.GetSceneByPath(sceneDependencies.mainScene.Path));
             await UniTask.WaitForEndOfFrame(this);
 
             // Notify everyone
@@ -97,5 +96,4 @@ namespace RenderDream.GameEssentials
     }
 
     public struct SaveGameEvent : IEvent { }
-    public struct LoadGameEvent : IEvent { }
 }

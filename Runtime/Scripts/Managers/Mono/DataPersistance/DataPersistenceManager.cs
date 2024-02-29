@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Diagnostics;
 using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
 
 namespace RenderDream.GameEssentials
 {
@@ -43,7 +44,7 @@ namespace RenderDream.GameEssentials
 
         private EventBinding<SaveGameEvent> _saveGameBinding;
 
-        private int _selectedProfileId;
+        private int _loadedProfileId, _selectedProfileId;
 
         protected bool IsPatternValid(string pattern)
         {
@@ -62,7 +63,6 @@ namespace RenderDream.GameEssentials
             };
             Process.Start(startInfo);
         }
-
 
         [Button(size: ButtonSizes.Large)]
         private void OpenRecentSaveFile()
@@ -127,18 +127,19 @@ namespace RenderDream.GameEssentials
             var dataObjects = new DataPersistenceObjects<T1, T2>();
             dataObjects.Init(scene);
             _sceneDataObjects.Add(scene.handle, dataObjects);
-
             Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
         }
 
         protected void Load(List<IDataPersistence<T1>> settingsDataObjs, List<IDataPersistence<T2>> gameDataObjs)
         {
-            _settingsData = _settingsDataHandler.Load();
-            if (_settingsData == null)
+            _settingsData ??= _settingsDataHandler.Load();
+            _settingsData ??= NewSettingsData();
+
+            if (_gameData == null || _loadedProfileId != _selectedProfileId)
             {
-                _settingsData = NewSettingsData();
+                _gameData = _gameDataHandler.Load(_selectedProfileId);
+                _loadedProfileId = _selectedProfileId;
             }
-            _gameData = _gameDataHandler.Load(_selectedProfileId);
             if (_gameData == null && _selectedProfileId != -1)
             {
                 _gameData = NewGameData();
@@ -205,10 +206,21 @@ namespace RenderDream.GameEssentials
 
             if (_disableDataPersistence)
             {
-                UnityEngine.Debug.LogWarning("DataPersistence is currently disabled!");
+                Debug.LogWarning("DataPersistence is currently disabled!");
             }
 
             Init();
+#if UNITY_EDITOR
+            var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
+            var dependentScenes = firstSceneDependencies.DependentScenes;
+            foreach (var scene in dependentScenes)
+            {
+                if (scene.LoadedScene.isLoaded)
+                {
+                    LoadGame(scene.LoadedScene);
+                }
+            }
+#endif
         }
 
         protected void OnEnable()
@@ -259,7 +271,7 @@ namespace RenderDream.GameEssentials
 
     }
 
-    [System.Serializable]
+    [Serializable]
     public class DataPersistenceObjects<T1, T2> where T1 : SettingsDataModel where T2 : GameDataModel
     {
         public List<IDataPersistence<T1>> settingsDataObjs;
@@ -267,12 +279,14 @@ namespace RenderDream.GameEssentials
 
         public void Init(Scene scene)
         {
+            settingsDataObjs = new List<IDataPersistence<T1>>();
+            gameDataObjs = new List<IDataPersistence<T2>>();
             var roots = scene.GetRootGameObjects();
             foreach (var root in roots)
             {
                 IEnumerable<MonoBehaviour> monos = root.GetComponentsInChildren<MonoBehaviour>(true);
-                settingsDataObjs = new List<IDataPersistence<T1>>(monos.OfType<IDataPersistence<T1>>());
-                gameDataObjs = new List<IDataPersistence<T2>>(monos.OfType<IDataPersistence<T2>>());
+                settingsDataObjs.AddRange(monos.OfType<IDataPersistence<T1>>());
+                gameDataObjs.AddRange(monos.OfType<IDataPersistence<T2>>());
             }
         }
     }
