@@ -40,7 +40,7 @@ namespace RenderDream.GameEssentials
         private T2 _gameData;
         private SingleFileDataHandler<T1> _settingsDataHandler;
         private MultipleFilesDataHandler<T2> _gameDataHandler;
-        public Dictionary<int, DataPersistenceObjects<T1, T2>> _sceneDataObjects;
+        private Dictionary<int, DataPersistenceObjects<T1, T2>> _sceneDataObjects;
 
         private EventBinding<SaveGameEvent> _saveGameBinding;
 

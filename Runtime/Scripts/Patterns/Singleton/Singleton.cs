@@ -1,9 +1,8 @@
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace RenderDream.GameEssentials
 {
-    public class Singleton<T> : SerializedMonoBehaviour where T : Component
+    public class Singleton<T> : MonoBehaviour where T : Component
     {
         protected static T instance;
         public static bool HasInstance => instance != null;
