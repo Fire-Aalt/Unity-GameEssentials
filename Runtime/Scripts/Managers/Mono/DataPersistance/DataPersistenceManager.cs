@@ -140,8 +140,14 @@ namespace RenderDream.GameEssentials
                 _gameData = _gameDataHandler.Load(_selectedProfileId);
                 _loadedProfileId = _selectedProfileId;
             }
-            if (_gameData == null && _selectedProfileId != -1)
+            if (_gameData == null)
             {
+#if UNITY_EDITOR
+                if (_selectedProfileId == -1)
+                {
+                    _selectedProfileId = 1;
+                }
+#endif
                 _gameData = NewGameData();
             }
 
