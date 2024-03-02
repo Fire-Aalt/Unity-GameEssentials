@@ -44,7 +44,7 @@ namespace RenderDream.GameEssentials
 
         private EventBinding<SaveGameEvent> _saveGameBinding;
 
-        private int _loadedProfileId, _selectedProfileId;
+        private int _selectedProfileId;
 
         protected bool IsPatternValid(string pattern)
         {
@@ -135,24 +135,6 @@ namespace RenderDream.GameEssentials
             _settingsData ??= _settingsDataHandler.Load();
             _settingsData ??= NewSettingsData();
 
-            if (_gameData == null || _loadedProfileId != _selectedProfileId)
-            {
-                _gameData = _gameDataHandler.Load(_selectedProfileId);
-                _loadedProfileId = _selectedProfileId;
-            }
-
-#if UNITY_EDITOR
-            if (_gameData == null)
-            {
-                var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
-                if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
-                {
-                    _selectedProfileId = 1;
-                }
-                _gameData = NewGameData();
-            }
-#endif
-
             if (_settingsData != null)
             {
                 foreach (IDataPersistence<T1> settingsDataObj in settingsDataObjs)
@@ -194,18 +176,25 @@ namespace RenderDream.GameEssentials
             }
         }
 
-        public void NewGame()
-        {
-            _gameData = NewGameData();
-        }
-
         public void DeleteProfileData(int profileId)
         {
             _gameDataHandler.DeleteSave(profileId);
+            if (_selectedProfileId == profileId)
+            {
+                _gameData = null;
+                _selectedProfileId = -1;
+            }
         }
 
+        /// <summary>
+        /// Loads data with newProfileId, if the data is null then it creates new data
+        /// </summary>
+        /// <param name="newProfileId"></param>
         public void ChangeSelectedProfileId(int newProfileId)
         {
+            _gameData = _gameDataHandler.Load(newProfileId);
+            _gameData ??= NewGameData();
+
             _selectedProfileId = newProfileId;
         }
 
@@ -221,8 +210,20 @@ namespace RenderDream.GameEssentials
             }
 
             Init();
+
+            if (_selectedProfileId != -1)
+            {
+                _gameData = _gameDataHandler.Load(_selectedProfileId);
+            }
+
 #if UNITY_EDITOR
             var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
+            if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
+            {
+                _selectedProfileId = 1;
+                _gameData = NewGameData();
+            }
+
             var dependentScenes = firstSceneDependencies.DependentScenes;
             foreach (var scene in dependentScenes)
             {
