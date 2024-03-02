@@ -108,8 +108,8 @@ namespace RenderDream.GameEssentials
             }
         }
 
-        public abstract T1 NewSettingsData();
-        public abstract T2 NewGameData();
+        protected abstract T1 NewSettingsData();
+        protected abstract T2 NewGameData();
 
         public void LoadGame()
         {
@@ -140,16 +140,18 @@ namespace RenderDream.GameEssentials
                 _gameData = _gameDataHandler.Load(_selectedProfileId);
                 _loadedProfileId = _selectedProfileId;
             }
+
+#if UNITY_EDITOR
             if (_gameData == null)
             {
-#if UNITY_EDITOR
-                if (_selectedProfileId == -1)
+                var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
+                if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
                 {
                     _selectedProfileId = 1;
                 }
-#endif
                 _gameData = NewGameData();
             }
+#endif
 
             if (_settingsData != null)
             {
@@ -192,6 +194,11 @@ namespace RenderDream.GameEssentials
             }
         }
 
+        public void NewGame()
+        {
+            _gameData = NewGameData();
+        }
+
         public void DeleteProfileData(int profileId)
         {
             _gameDataHandler.DeleteSave(profileId);
@@ -199,9 +206,7 @@ namespace RenderDream.GameEssentials
 
         public void ChangeSelectedProfileId(int newProfileId)
         {
-            SaveGame();
             _selectedProfileId = newProfileId;
-            LoadGame();
         }
 
         public Dictionary<int, T2> GetAllProfilesGameData() => _gameDataHandler.LoadAllProfiles();
