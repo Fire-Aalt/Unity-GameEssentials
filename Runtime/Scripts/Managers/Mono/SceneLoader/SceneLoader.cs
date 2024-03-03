@@ -18,7 +18,7 @@ namespace RenderDream.GameEssentials
             _scenesData = ScenesDataSO.Instance;
         }
 
-        public async UniTask LoadSceneWithTransition(SceneType sceneType, bool reloadScenes = false)
+        public async UniTaskVoid LoadSceneWithTransition(SceneType sceneType, bool reloadScenes = false)
         {
             // Start full transition
             IsTransitioning = true;
@@ -56,7 +56,8 @@ namespace RenderDream.GameEssentials
             // Unload scenes
             for (int i = 0; i < scenesToUnload.Count; i++)
             {
-                await SceneManager.UnloadSceneAsync(scenesToUnload[i]);
+                var op = SceneManager.UnloadSceneAsync(scenesToUnload[i]);
+                await UniTask.WaitUntil(() => op.isDone == true);
             }
 
             // Load dependent scenes
@@ -65,7 +66,8 @@ namespace RenderDream.GameEssentials
             {
                 if (!dependentScenes[i].LoadedScene.IsValid())
                 {
-                    await SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
+                    var op = SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
+                    await UniTask.WaitUntil(() => op.isDone == true);
                 }
             }
 
