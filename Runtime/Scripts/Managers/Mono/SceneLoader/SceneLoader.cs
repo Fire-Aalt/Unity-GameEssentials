@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using MoreMountains.Tools;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace RenderDream.GameEssentials
 {
@@ -33,7 +34,6 @@ namespace RenderDream.GameEssentials
             // Start shallow transition
             IsTransitioning = true;
             MMSoundManager.Current.FreeAllLoopingSounds();
-            //GameManager.Current.UpdateGameState(GameState.Transition);
 
             Scene bootLoader = _scenesData.bootLoaderScene.LoadedScene;
             SceneManager.SetActiveScene(bootLoader);
@@ -56,8 +56,7 @@ namespace RenderDream.GameEssentials
             // Unload scenes
             for (int i = 0; i < scenesToUnload.Count; i++)
             {
-                var op = SceneManager.UnloadSceneAsync(scenesToUnload[i]);
-                await UniTask.WaitUntil(() => op.isDone == true);
+                await SceneManager.UnloadSceneAsync(scenesToUnload[i]);
             }
 
             // Load dependent scenes
@@ -66,8 +65,7 @@ namespace RenderDream.GameEssentials
             {
                 if (!dependentScenes[i].LoadedScene.IsValid())
                 {
-                    var op = SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
-                    await UniTask.WaitUntil(() => op.isDone == true);
+                    await SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
                 }
             }
 

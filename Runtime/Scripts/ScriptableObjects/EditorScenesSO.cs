@@ -21,6 +21,5 @@ namespace RenderDream.GameEssentials
 
         public List<string> openedScenes;
         public SceneDependencies firstSceneDependencies;
-
     }
 }

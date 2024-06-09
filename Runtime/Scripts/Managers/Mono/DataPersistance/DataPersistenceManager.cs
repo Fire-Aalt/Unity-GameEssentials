@@ -219,21 +219,15 @@ namespace RenderDream.GameEssentials
                     _gameData = NewGameData();
                 }
             }
-
+            // TODO: Better logic
 #if UNITY_EDITOR
             var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
-            if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
+            if (firstSceneDependencies != null)
             {
-                _selectedProfileId = 1;
-                _gameData = NewGameData();
-            }
-
-            var dependentScenes = firstSceneDependencies.DependentScenes;
-            foreach (var scene in dependentScenes)
-            {
-                if (scene.LoadedScene.isLoaded)
+                if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
                 {
-                    LoadGame(scene.LoadedScene);
+                    _selectedProfileId = 1;
+                    _gameData = NewGameData();
                 }
             }
 #endif

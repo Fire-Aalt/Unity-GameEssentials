@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using Cysharp.Threading.Tasks;
+using Eflatun.SceneReference;
 
 namespace RenderDream.GameEssentials
 {
@@ -15,15 +16,27 @@ namespace RenderDream.GameEssentials
                     $" for the {typeof(BootLoader)} to work properly");
                 return;
             }
-            await UniTask.WaitUntil(() => SceneLoader.Current != null);
 
-            SceneDependencies firstSceneDependencies = GetFirstSceneDependencies();
-            if (firstSceneDependencies == null)
+            SceneDependencies firstSceneDependencies;
+            SceneReference bootLoaderScene = ScenesDataSO.Instance.bootLoaderScene;
+            
+            if (bootLoaderScene.LoadedScene.IsValid())
             {
-                Debug.LogError($"No MainMenu Scene was found in {ScenesDataSO.Instance}." +
-                    $" Please, ensure you have atleast one SceneDependency with type of {SceneType.MainMenu}");
+                firstSceneDependencies = GetFirstSceneDependencies();
+                if (firstSceneDependencies == null)
+                {
+                    Debug.LogError($"No MainMenu Scene was found in {ScenesDataSO.Instance}." +
+                        $" Please, ensure you have atleast one SceneDependency with type of {SceneType.MainMenu}");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Unknown dependencies found. BootLoader is inactive");
                 return;
             }
+
+            await UniTask.WaitUntil(() => SceneLoader.Current != null);
             await SceneLoader.Current.LoadScene(firstSceneDependencies, reloadScenes: false);
         }
 
@@ -34,6 +47,7 @@ namespace RenderDream.GameEssentials
             sceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
 #endif
             sceneDependencies ??= ScenesDataSO.Instance.GetSceneDependencies(SceneType.MainMenu);
+            
             return sceneDependencies;
         }
     }
