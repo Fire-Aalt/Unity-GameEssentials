@@ -50,35 +50,40 @@ namespace RenderDream.GameEssentials
                 {
                     var operation = SceneManager.LoadSceneAsync(sceneData.Reference.Path, LoadSceneMode.Additive);
                     operationGroup.Operations.Add(operation);
+
+                    operation.completed += AsyncOperation => HandleSceneLoaded(sceneData);
                 }
                 else if (sceneData.Reference.State == SceneReferenceState.Addressable)
                 {
                     var sceneHandle = Addressables.LoadSceneAsync(sceneData.Reference.Path, LoadSceneMode.Additive);
                     handleGroup.Handles.Add(sceneHandle);
+
+                    sceneHandle.Completed += AsyncOperation => HandleSceneLoaded(sceneData);
                 }
 
                 if (loadDelay > 0)
                 {
                     await UniTask.Delay(loadDelay);
                 }
-
-                OnSceneLoaded.Invoke(sceneData.Reference.Path);
             }
 
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone || !handleGroup.IsDone)
             {
                 progress?.Report((operationGroup.Progress + handleGroup.Progress) / 2);
-            }
-
-            Scene activeScene = SceneManager.GetSceneByName(ActiveSceneGroup.MainScene.Name);
-
-            if (activeScene.IsValid())
-            {
-                SceneManager.SetActiveScene(activeScene);
+                await UniTask.Delay(1);
             }
 
             OnSceneGroupLoaded.Invoke();
+        }
+
+        private void HandleSceneLoaded(SceneData sceneData)
+        {
+            if (sceneData.Reference.Path == ActiveSceneGroup.MainScene.Reference.Path)
+            {
+                SceneManager.SetActiveScene(SceneManager.GetSceneByName(ActiveSceneGroup.MainScene.Name));
+            }
+            OnSceneLoaded.Invoke(sceneData.Reference.Path);
         }
 
         public async UniTask UnloadScenes(bool unloadDupScenes)
@@ -123,7 +128,7 @@ namespace RenderDream.GameEssentials
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone)
             {
-                
+                await UniTask.Delay(1);
             }
 
             // Optional: UnloadUnusedAssets - unloads all unused assets from memory
