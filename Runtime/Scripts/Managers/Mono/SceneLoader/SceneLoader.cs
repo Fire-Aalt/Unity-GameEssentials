@@ -1,99 +1,98 @@
 using Cysharp.Threading.Tasks;
 using MoreMountains.Tools;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
+using Sirenix.OdinInspector;
+using System;
 using UnityEngine;
 
 namespace RenderDream.GameEssentials
 {
+    [RequireComponent(typeof(SceneTransitionManager))]
     public class SceneLoader : Singleton<SceneLoader>
     {
-        public static bool IsTransitioning { get; private set; }
+        [Title("Scenes")]
+        [SerializeField] protected ScenesDataSO scenesData;
+        [Title("Debug")]
+        [SerializeField] protected int sceneLoadDelay;
+        [SerializeField] protected bool debugLogs;
 
-        private ScenesDataSO _scenesData;
+        public SceneTransitionManager SceneTransitionManager { get; private set; }
+        public readonly SceneGroupManager SceneGroupManager = new();
+
+        public static bool IsTransitioning { get; private set; }
+        public static bool IsLoading { get; private set; }
 
         protected override void Awake()
         {
             base.Awake();
 
-            _scenesData = ScenesDataSO.Instance;
+            SceneTransitionManager = GetComponent<SceneTransitionManager>();
+
+            if (debugLogs)
+            {
+                SceneGroupManager.OnSceneLoaded += sceneName => GameEssentialsDebug.Log("Loaded: " + sceneName);
+                SceneGroupManager.OnSceneUnloaded += sceneName => GameEssentialsDebug.Log("Unloaded: " + sceneName);
+                SceneGroupManager.OnSceneGroupLoaded += () => GameEssentialsDebug.Log($"Scene group '{SceneGroupManager.ActiveSceneGroup.GroupName}' loaded");
+            }
         }
 
-        public async UniTaskVoid LoadSceneWithTransition(SceneType sceneType, bool reloadScenes = false)
+        public virtual async UniTask LoadSceneGroup(int index, bool reloadDupScenes, SceneTransition transition)
         {
-            // Start full transition
+            if (!IsIndexValid(index) || IsTransitioning) return;
+
+            // Save -> TransitionIn -> FreeAllLoopingSounds
             IsTransitioning = true;
             EventBus<SaveGameEvent>.Raise(new SaveGameEvent());
-            await SceneTransitionManager.Current.TransitionIn();
-
-            await LoadScene(_scenesData.GetSceneDependencies(sceneType), reloadScenes);
-        }
-
-        public async UniTask LoadScene(SceneDependencies sceneDependencies, bool reloadScenes = false)
-        {
-            // Start shallow transition
-            IsTransitioning = true;
+            var loadingProgress = SceneTransitionManager.InitializeProgressBar();
+            if (transition == SceneTransition.TransitionInAndOut)
+            {
+                await SceneTransitionManager.TransitionIn();
+            }
             MMSoundManager.Current.FreeAllLoopingSounds();
 
-            Scene bootLoader = _scenesData.bootLoaderScene.LoadedScene;
-            SceneManager.SetActiveScene(bootLoader);
-            SceneTransitionManager.Current.ChangeTransitionCameraState(isActive: true);
+            // Enable camera -> LoadScenes -> Disable camera
+            IsLoading = true;
+            SceneTransitionManager.EnableLoadingCamera(true);
+            await SceneGroupManager.LoadScenes(scenesData.sceneGroups[index], loadingProgress, reloadDupScenes, sceneLoadDelay);
+            SceneTransitionManager.EnableLoadingCamera(false);
+            IsLoading = false;
 
-            // Find scenes to Unload (except for _BootLoader)
-            List<Scene> scenesToUnload = new();
-            for (int i = 0; i < SceneManager.sceneCount; i++)
+            // TransitionOut
+            if (transition == SceneTransition.TransitionOut || transition == SceneTransition.TransitionInAndOut)
             {
-                Scene scene = SceneManager.GetSceneAt(i);
-                if (scene != bootLoader)
-                {
-                    if (reloadScenes || !sceneDependencies.IsSceneDependent(scene))
-                    {
-                        scenesToUnload.Add(scene);
-                    }
-                }
+                await SceneTransitionManager.TransitionOut();
             }
-
-            // Unload scenes
-            for (int i = 0; i < scenesToUnload.Count; i++)
-            {
-                await SceneManager.UnloadSceneAsync(scenesToUnload[i]);
-            }
-
-            // Load dependent scenes
-            var dependentScenes = sceneDependencies.DependentScenes;
-            for (int i = 0; i < dependentScenes.Count; i++)
-            {
-                if (!dependentScenes[i].LoadedScene.IsValid())
-                {
-                    await SceneManager.LoadSceneAsync(dependentScenes[i].Path, LoadSceneMode.Additive);
-                }
-            }
-
-            await InitializeScene(sceneDependencies);
+            IsTransitioning = false;
         }
 
-        private async UniTask InitializeScene(SceneDependencies sceneDependencies)
+        protected bool IsIndexValid(int index)
         {
-            // Set active scene
-            SceneManager.SetActiveScene(SceneManager.GetSceneByPath(sceneDependencies.mainScene.Path));
-            await UniTask.WaitForEndOfFrame(this);
-
-            // Notify everyone
-            EventBus<ScenesLoadedEvent>.Raise(new ScenesLoadedEvent {
-                sceneDependencies = sceneDependencies
-            });
-            IsTransitioning = false;
-
-            // End transition
-            SceneTransitionManager.Current.ChangeTransitionCameraState(isActive: false);
-            await SceneTransitionManager.Current.TransitionOut();
+            if (index < 0 || index >= scenesData.sceneGroups.Length)
+            {
+                Debug.LogError("Invalid scene group index: " + index);
+                return false;
+            }
+            return true;
         }
     }
 
-    public struct ScenesLoadedEvent : IEvent
+    public enum SceneTransition
     {
-        public SceneDependencies sceneDependencies;
+        NoTransition,
+        TransitionOut,
+        TransitionInAndOut
     }
 
     public struct SaveGameEvent : IEvent { }
+
+    public class LoadingProgress : IProgress<float>
+    {
+        public event Action<float> Progressed;
+
+        const float ratio = 1f;
+
+        public void Report(float value)
+        {
+            Progressed?.Invoke(value / ratio);
+        }
+    }
 }

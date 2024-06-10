@@ -9,7 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8192710494933039225}
-  - component: {fileID: 4460408484148028717}
+  - component: {fileID: 1896334298866699393}
+  - component: {fileID: 7212416182628796399}
   m_Layer: 0
   m_Name: SceneLoader
   m_TagString: Untagged
@@ -32,7 +33,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4460408484148028717
+--- !u!114 &1896334298866699393
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,7 +42,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 2885506607875425949}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a72bc1d67417ca044a4236dbe06bbd64, type: 3}
+  m_Script: {fileID: 11500000, guid: 9f226a4d72ed15d4f950b9d5c13f37ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  <ScenesData>k__BackingField: {fileID: 11400000, guid: c16fddeb73d294842a6293378dd235c5, type: 2}
+  scenesData: {fileID: 11400000, guid: 93f13e87b2c715e46939623911cd8d7c, type: 2}
+  sceneLoadDelay: 0
+  debugLogs: 1
+--- !u!114 &7212416182628796399
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2885506607875425949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e51d244520163541a65be382fb5720b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  loadingCanvas: {fileID: 0}
+  loadingCamera: {fileID: 0}
+  transitionInPlayer: {fileID: 0}
+  transitionOutPlayer: {fileID: 0}
+  loadingBar: 0
+  loadingBarImage: {fileID: 0}
+  fillSpeed: 5

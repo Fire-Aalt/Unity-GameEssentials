@@ -20,6 +20,7 @@ namespace RenderDream.GameEssentials
         private static EditorScenesSO _editorScenesData;
 
         public List<string> openedScenes;
-        public SceneDependencies firstSceneDependencies;
+        public SceneGroup firstSceneGroup;
+        public int firstSceneGroupIndex;
     }
 }

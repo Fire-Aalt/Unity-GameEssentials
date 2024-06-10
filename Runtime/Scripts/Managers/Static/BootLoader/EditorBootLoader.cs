@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 using Eflatun.SceneReference;
 using UnityEngine;
 using System.Linq;
+using System;
+
 
 #if UNITY_EDITOR
 using UnityEditor.SceneManagement;
@@ -44,16 +46,17 @@ namespace RenderDream.GameEssentials
         {
             EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
 
-            // Get SceneDependencies
+            // Get SceneGroup
             _editorScenesData.openedScenes = new List<string>();
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 _editorScenesData.openedScenes.Add(SceneManager.GetSceneAt(i).path);
             }
-            _editorScenesData.firstSceneDependencies = GetFirstSceneDependencies();
+            _editorScenesData.firstSceneGroup = GetFirstSceneGroup();
+            _editorScenesData.firstSceneGroupIndex = Array.FindIndex(_scenesData.sceneGroups, g => g == _editorScenesData.firstSceneGroup); ;
 
-            // Force return if unknown SceneDependencies
-            if (!bootLoaderScene.LoadedScene.IsValid() && _editorScenesData.firstSceneDependencies == null)
+            // Force return if unknown SceneGroup
+            if (!bootLoaderScene.LoadedScene.IsValid() && _editorScenesData.firstSceneGroup == null)
             {
                 return;
             }
@@ -71,9 +74,9 @@ namespace RenderDream.GameEssentials
             }
 
             // Move Main scene as second
-            if (_editorScenesData.firstSceneDependencies != null)
+            if (_editorScenesData.firstSceneGroup != null)
             {
-                SceneReference mainScene = _editorScenesData.firstSceneDependencies.mainScene;
+                SceneReference mainScene = _editorScenesData.firstSceneGroup.MainScene.Reference;
                 EditorSceneManager.MoveSceneAfter(mainScene.LoadedScene, topScene);
             }
         }
@@ -87,28 +90,28 @@ namespace RenderDream.GameEssentials
             }
         }
 
-        private static SceneDependencies GetFirstSceneDependencies()
+        private static SceneGroup GetFirstSceneGroup()
         {
-            SceneDependencies sceneDependencies = null;
+            SceneGroup sceneGroup = null;
             List<string> openedScenesInEditor = _editorScenesData.openedScenes;
 
             for (int i = 0; i < openedScenesInEditor.Count; i++)
             {
-                sceneDependencies = HasDependencies(openedScenesInEditor[i]);
-                if (sceneDependencies != null)
+                sceneGroup = HasSceneGroup(openedScenesInEditor[i]);
+                if (sceneGroup != null)
                 {
                     break;
                 }
             }
-            return sceneDependencies;
+            return sceneGroup;
         }
 
-        public static SceneDependencies HasDependencies(string scenePath)
+        public static SceneGroup HasSceneGroup(string scenePath)
         {
-            var sceneDependenciesArray = _scenesData.sceneDependencies;
+            var sceneDependenciesArray = _scenesData.sceneGroups;
             for (int i = 0; i < sceneDependenciesArray.Length; i++)
             {
-                if (scenePath == sceneDependenciesArray[i].mainScene.Path)
+                if (scenePath == sceneDependenciesArray[i].MainScene.Reference.Path)
                 {
                     return sceneDependenciesArray[i];
                 }

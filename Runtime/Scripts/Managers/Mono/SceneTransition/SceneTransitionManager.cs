@@ -1,55 +1,80 @@
 using Cysharp.Threading.Tasks;
 using MoreMountains.Feedbacks;
-using MoreMountains.Tools;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace RenderDream.GameEssentials
 {
-    public class SceneTransitionManager : MMSingleton<SceneTransitionManager>
+    public class SceneTransitionManager : MonoBehaviour
     {
-        [field: SerializeField, Title("References")]
-        public Camera TransitionCamera { get; private set; }
+        [Title("References")]
+        [SerializeField] protected Canvas loadingCanvas;
+        [SerializeField] protected Camera loadingCamera;
 
-        [field: SerializeField, Title("MMF Players")]
-        public MMF_Player TransitionInPlayer { get; private set; }
-        [field: SerializeField]
-        public MMF_Player TransitionOutPlayer { get; private set; }
+        [Title("MMF Players")]
+        [SerializeField] protected MMF_Player transitionInPlayer;
+        [SerializeField] protected MMF_Player transitionOutPlayer;
 
-        protected override void Awake()
+        [Title("Params")]
+        [SerializeField] protected bool loadingBar;
+        [SerializeField, ShowIf("loadingBar")] protected Image loadingBarImage;
+        [SerializeField, ShowIf("loadingBar")] protected float fillSpeed = 0.5f;
+
+        protected float targetProgress;
+
+        protected virtual void Awake()
         {
-            base.Awake();
-
-            TransitionInPlayer.Initialization();
-            TransitionOutPlayer.Initialization();
+            transitionInPlayer.Initialization();
+            transitionOutPlayer.Initialization();
         }
 
-        public void ChangeTransitionCameraState(bool isActive)
+        protected virtual void Update()
         {
-            if (isActive)
+            if (loadingBar && SceneLoader.IsLoading)
             {
-                TransitionCamera.depth = 100;
-                TransitionCamera.enabled = true;
+                float currentFillAmount = loadingBarImage.fillAmount;
+                float progressDifference = Mathf.Abs(currentFillAmount - targetProgress);
+
+                float dynamicFillSpeed = progressDifference * fillSpeed;
+
+                loadingBarImage.fillAmount = Mathf.Lerp(currentFillAmount, targetProgress, Time.deltaTime * dynamicFillSpeed);
             }
-            else
+        }
+
+        public virtual LoadingProgress InitializeProgressBar()
+        {
+            if (loadingBar)
             {
-                TransitionCamera.depth = -100;
-                TransitionCamera.enabled = false;
+                loadingBarImage.fillAmount = 0f;
             }
+            targetProgress = 1f;
+
+            LoadingProgress progress = new();
+            progress.Progressed += target => targetProgress = Mathf.Max(target, targetProgress);
+
+            return progress;
         }
 
-        public async UniTask TransitionIn()
+        public virtual void EnableLoadingCamera(bool enable)
         {
-            TransitionInPlayer.PlayFeedbacks();
-
-            await UniTask.WaitForSeconds(TransitionInPlayer.TotalDuration, ignoreTimeScale: true);
+            loadingCamera.depth = enable ? 100 : -100;
+            loadingCamera.enabled = enable;
         }
 
-        public async UniTask TransitionOut()
+        public virtual async UniTask TransitionIn()
         {
-            TransitionOutPlayer.PlayFeedbacks();
+            loadingBarImage.fillAmount = 0f;
+            transitionInPlayer.PlayFeedbacks();
 
-            await UniTask.WaitForSeconds(TransitionOutPlayer.TotalDuration, ignoreTimeScale: true);
+            await UniTask.WaitForSeconds(transitionInPlayer.TotalDuration, ignoreTimeScale: true);
+        }
+
+        public virtual async UniTask TransitionOut()
+        {
+            transitionOutPlayer.PlayFeedbacks();
+
+            await UniTask.WaitForSeconds(transitionOutPlayer.TotalDuration, ignoreTimeScale: true);
         }
     }
 }

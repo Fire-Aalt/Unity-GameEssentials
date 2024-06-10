@@ -221,10 +221,10 @@ namespace RenderDream.GameEssentials
             }
             // TODO: Better logic
 #if UNITY_EDITOR
-            var firstSceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
-            if (firstSceneDependencies != null)
+            var editorScenes = EditorScenesSO.Instance;
+            if (editorScenes.firstSceneGroup != null)
             {
-                if (_selectedProfileId == -1 && firstSceneDependencies.sceneType != SceneType.MainMenu)
+                if (_selectedProfileId == -1 && editorScenes.firstSceneGroup.Index != 0)
                 {
                     _selectedProfileId = 1;
                     _gameData = NewGameData();

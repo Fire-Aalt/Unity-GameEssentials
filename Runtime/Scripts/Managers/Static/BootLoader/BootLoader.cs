@@ -1,15 +1,21 @@
 ﻿using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
+using System;
 
 namespace RenderDream.GameEssentials
 {
     public static class BootLoader
     {
+        private static ScenesDataSO scenesData;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static async UniTaskVoid OnAfterSceneLoad()
         {
-            if (ScenesDataSO.Instance == null)
+            scenesData = ScenesDataSO.Instance;
+            scenesData.IndexSceneGroups();
+
+            if (scenesData == null)
             {
                 Debug.LogError($"{typeof(ScenesDataSO)} was not found." +
                     $" Please, ensure you have a ScriptableObject.asset called 'ScenesData' in the root of any folder called 'Resources'" +
@@ -17,15 +23,15 @@ namespace RenderDream.GameEssentials
                 return;
             }
 
-            SceneDependencies firstSceneDependencies;
-            SceneReference bootLoaderScene = ScenesDataSO.Instance.bootLoaderScene;
+            SceneGroup firstSceneGroup;
+            SceneReference bootLoaderScene = scenesData.bootLoaderScene;
             
             if (bootLoaderScene.LoadedScene.IsValid())
             {
-                firstSceneDependencies = GetFirstSceneDependencies();
-                if (firstSceneDependencies == null)
+                firstSceneGroup = GetFirstSceneGroup();
+                if (firstSceneGroup == null)
                 {
-                    Debug.LogError($"No MainMenu Scene was found in {ScenesDataSO.Instance}." +
+                    Debug.LogError($"No MainMenu Scene was found in {scenesData}." +
                         $" Please, ensure you have atleast one SceneDependency with type of {SceneType.MainMenu}");
                     return;
                 }
@@ -37,18 +43,18 @@ namespace RenderDream.GameEssentials
             }
 
             await UniTask.WaitUntil(() => SceneLoader.Current != null);
-            await SceneLoader.Current.LoadScene(firstSceneDependencies, reloadScenes: false);
+            await SceneLoader.Current.LoadSceneGroup(firstSceneGroup.Index, false, SceneTransition.TransitionOut);
         }
 
-        private static SceneDependencies GetFirstSceneDependencies()
+        private static SceneGroup GetFirstSceneGroup()
         {
-            SceneDependencies sceneDependencies = null;
+            SceneGroup sceneGroup = null;
 #if UNITY_EDITOR
-            sceneDependencies = EditorScenesSO.Instance.firstSceneDependencies;
+            sceneGroup = EditorScenesSO.Instance.firstSceneGroup;
 #endif
-            sceneDependencies ??= ScenesDataSO.Instance.GetSceneDependencies(SceneType.MainMenu);
+            sceneGroup ??= ScenesDataSO.Instance.sceneGroups[0];
             
-            return sceneDependencies;
+            return sceneGroup;
         }
     }
 }
