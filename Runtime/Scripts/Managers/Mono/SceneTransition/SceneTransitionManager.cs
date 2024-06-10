@@ -64,7 +64,6 @@ namespace RenderDream.GameEssentials
 
         public virtual async UniTask TransitionIn()
         {
-            loadingBarImage.fillAmount = 0f;
             transitionInPlayer.PlayFeedbacks();
 
             await UniTask.WaitForSeconds(transitionInPlayer.TotalDuration, ignoreTimeScale: true);
