@@ -69,7 +69,6 @@ namespace RenderDream.GameEssentials
             while (!operationGroup.IsDone || !handleGroup.IsDone)
             {
                 progress?.Report((operationGroup.Progress + handleGroup.Progress) / 2);
-                await UniTask.Delay(100);
             }
 
             Scene activeScene = SceneManager.GetSceneByName(ActiveSceneGroup.MainScene.Name);
@@ -124,7 +123,7 @@ namespace RenderDream.GameEssentials
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone)
             {
-                await UniTask.Delay(100); // delay to avoid tight loop
+                
             }
 
             // Optional: UnloadUnusedAssets - unloads all unused assets from memory
