@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using MoreMountains.Feedbacks;
 using MoreMountains.Tools;
 using Sirenix.OdinInspector;
 using System;
@@ -47,6 +48,7 @@ namespace RenderDream.GameEssentials
             {
                 await SceneTransitionManager.TransitionIn();
             }
+            MMTimeManager.Current.SetTimeScaleTo(1f);
             MMSoundManager.Current.FreeAllLoopingSounds();
 
             // Enable camera -> LoadScenes -> Disable camera
