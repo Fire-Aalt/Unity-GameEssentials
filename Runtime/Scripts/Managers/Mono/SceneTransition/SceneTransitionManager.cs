@@ -17,18 +17,19 @@ namespace RenderDream.GameEssentials
         [SerializeField] protected MMF_Player transitionOutPlayer;
 
         [Title("Transition Params")]
-        [SerializeField] protected float extraWaitTime = 0.5f;
-        [SerializeField] protected float transitionDuration = 1f;
+        [SerializeField] protected float initializeSceneGroupDuration = 1f;
+        [SerializeField] protected float transitionDuration = 0.5f;
 
         [Title("Loading Bar")]
         [SerializeField] protected bool loadingBar;
         [SerializeField, ShowIf("loadingBar")] protected Image loadingBarImage;
-        [SerializeField, ShowIf("loadingBar")] protected float fillSpeed = 0.5f;
+        [SerializeField, ShowIf("loadingBar")] protected float fillSpeed = 5f;
 
         protected float targetProgress;
 
         protected virtual void Awake()
         {
+            SetCanvasGroupActive(true);
             transitionInPlayer.Initialization();
             transitionOutPlayer.Initialization();
         }
@@ -70,20 +71,21 @@ namespace RenderDream.GameEssentials
         {
             transitionInPlayer.PlayFeedbacks();
 
-            await LerpAlpha(transitionDuration, 1f);
+            await LerpCanvasGroupAlpha(transitionDuration, true);
         }
 
         public virtual async UniTask TransitionOut()
         {
             transitionOutPlayer.PlayFeedbacks();
 
-            await UniTask.WaitForSeconds(extraWaitTime, ignoreTimeScale: true);
-            await LerpAlpha(transitionDuration, 0f);
+            await UniTask.WaitForSeconds(initializeSceneGroupDuration, ignoreTimeScale: true);
+            await LerpCanvasGroupAlpha(transitionDuration, false);
         }
 
-        protected virtual async UniTask LerpAlpha(float duration, float endAlpha)
+        protected virtual async UniTask LerpCanvasGroupAlpha(float duration, bool setActive)
         {
-            float startAlpha = loadingCanvasGroup.alpha;
+            float startAlpha = setActive ? 0f : 1f;
+            float endAlpha = setActive ? 1f : 0f;
 
             float elapsedTime = 0f;
             while (elapsedTime < duration)
@@ -94,7 +96,14 @@ namespace RenderDream.GameEssentials
                 await UniTask.Yield();
             }
 
-            loadingCanvasGroup.alpha = endAlpha;
+            SetCanvasGroupActive(setActive);
         }
+
+        private void SetCanvasGroupActive(bool isActive)
+        {
+            loadingCanvasGroup.alpha = isActive ? 1f : 0f;
+            loadingCanvasGroup.blocksRaycasts = isActive;
+        }
+
     }
 }
