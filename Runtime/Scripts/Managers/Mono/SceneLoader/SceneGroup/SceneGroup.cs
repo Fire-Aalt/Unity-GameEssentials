@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Eflatun.SceneReference;
 using Sirenix.OdinInspector;
 using UnityEngine.SceneManagement;
@@ -43,6 +44,11 @@ namespace RenderDream.GameEssentials
                 }
             }
             return false;
+        }
+
+        public SceneData GetSceneData(Scene scene) 
+        {
+            return Scenes.FirstOrDefault(s => s.Reference.Path == scene.path);
         }
 
         public void SetDirty() => _isDirty = true;

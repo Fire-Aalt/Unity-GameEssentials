@@ -97,7 +97,11 @@ namespace RenderDream.GameEssentials
                 if (!sceneAt.isLoaded) continue;
 
                 var sceneName = sceneAt.path;
-                if (ActiveSceneGroup.IsSceneInGroup(sceneAt) && !unloadDupScenes) continue;
+                if (ActiveSceneGroup.IsSceneInGroup(sceneAt) && !unloadDupScenes)
+                {
+                    HandleSceneLoaded(ActiveSceneGroup.GetSceneData(sceneAt));
+                    continue;
+                }
                 if (handleGroup.Handles.Any(h => h.IsValid() && h.Result.Scene.path == sceneName)) continue;
 
                 scenesToUnload.Add(sceneName);
