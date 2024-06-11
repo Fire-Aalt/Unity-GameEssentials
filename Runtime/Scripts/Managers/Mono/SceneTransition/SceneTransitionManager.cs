@@ -93,7 +93,7 @@ namespace RenderDream.GameEssentials
                 elapsedTime += Time.unscaledDeltaTime;
 
                 loadingCanvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
-                await UniTask.WaitForFixedUpdate();
+                await UniTask.Yield();
             }
 
             SetCanvasGroupActive(setActive);
