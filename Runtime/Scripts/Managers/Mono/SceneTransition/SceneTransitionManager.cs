@@ -9,14 +9,18 @@ namespace RenderDream.GameEssentials
     public class SceneTransitionManager : MonoBehaviour
     {
         [Title("References")]
-        [SerializeField] protected Canvas loadingCanvas;
+        [SerializeField] protected CanvasGroup loadingCanvasGroup;
         [SerializeField] protected Camera loadingCamera;
 
         [Title("MMF Players")]
         [SerializeField] protected MMF_Player transitionInPlayer;
         [SerializeField] protected MMF_Player transitionOutPlayer;
 
-        [Title("Params")]
+        [Title("Transition Params")]
+        [SerializeField] protected float extraWaitTime = 0.5f;
+        [SerializeField] protected float transitionDuration = 1f;
+
+        [Title("Loading Bar")]
         [SerializeField] protected bool loadingBar;
         [SerializeField, ShowIf("loadingBar")] protected Image loadingBarImage;
         [SerializeField, ShowIf("loadingBar")] protected float fillSpeed = 0.5f;
@@ -66,14 +70,31 @@ namespace RenderDream.GameEssentials
         {
             transitionInPlayer.PlayFeedbacks();
 
-            await UniTask.WaitForSeconds(transitionInPlayer.TotalDuration, ignoreTimeScale: true);
+            await LerpAlpha(transitionDuration, 1f);
         }
 
         public virtual async UniTask TransitionOut()
         {
             transitionOutPlayer.PlayFeedbacks();
 
-            await UniTask.WaitForSeconds(transitionOutPlayer.TotalDuration, ignoreTimeScale: true);
+            await UniTask.WaitForSeconds(extraWaitTime, ignoreTimeScale: true);
+            await LerpAlpha(transitionDuration, 0f);
+        }
+
+        protected virtual async UniTask LerpAlpha(float duration, float endAlpha)
+        {
+            float startAlpha = loadingCanvasGroup.alpha;
+
+            float elapsedTime = 0f;
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.unscaledDeltaTime;
+
+                loadingCanvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
+                await UniTask.Yield();
+            }
+
+            loadingCanvasGroup.alpha = endAlpha;
         }
     }
 }
