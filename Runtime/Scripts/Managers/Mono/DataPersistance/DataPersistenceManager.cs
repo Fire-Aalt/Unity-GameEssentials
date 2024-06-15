@@ -7,6 +7,7 @@ using System.IO;
 using System.Diagnostics;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
+using Eflatun.SceneReference;
 
 namespace RenderDream.GameEssentials
 {
@@ -80,6 +81,39 @@ namespace RenderDream.GameEssentials
             }
         }
 
+        protected override void Awake()
+        {
+            base.Awake();
+
+            if (_disableDataPersistence)
+            {
+                Debug.LogWarning("DataPersistence is currently disabled!");
+            }
+
+            Init();
+
+            if (_selectedProfileId != -1)
+            {
+                _gameData = _gameDataHandler.Load(_selectedProfileId);
+                if (!_multipleProfiles && _gameData == null)
+                {
+                    _gameData = NewGameData();
+                }
+            }
+            // TODO: Better logic
+#if UNITY_EDITOR
+            var editorScenes = EditorScenesSO.Instance;
+            if (editorScenes.firstSceneGroup != null)
+            {
+                if (_selectedProfileId == -1 && editorScenes.firstSceneGroup.Index != 0)
+                {
+                    _selectedProfileId = 1;
+                    _gameData = NewGameData();
+                }
+            }
+#endif
+        }
+
         protected virtual void Init()
         {
             string profileDirectoryPattern, profileFilePattern;
@@ -124,10 +158,13 @@ namespace RenderDream.GameEssentials
         {
             if (_disableDataPersistence) return;
 
-            var dataObjects = new DataPersistenceObjects<T1, T2>();
-            dataObjects.Init(scene);
-            _sceneDataObjects.Add(scene.handle, dataObjects);
-            Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
+            if (!_sceneDataObjects.ContainsKey(scene.handle))
+            {
+                var dataObjects = new DataPersistenceObjects<T1, T2>();
+                dataObjects.Init(scene);
+                _sceneDataObjects.Add(scene.handle, dataObjects);
+                Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
+            }
         }
 
         protected void Load(List<IDataPersistence<T1>> settingsDataObjs, List<IDataPersistence<T2>> gameDataObjs)
@@ -200,58 +237,29 @@ namespace RenderDream.GameEssentials
 
         public Dictionary<int, T2> GetAllProfilesGameData() => _gameDataHandler.LoadAllProfiles();
 
-        protected override void Awake()
-        {
-            base.Awake();
-
-            if (_disableDataPersistence)
-            {
-                Debug.LogWarning("DataPersistence is currently disabled!");
-            }
-
-            Init();
-
-            if (_selectedProfileId != -1)
-            {
-                _gameData = _gameDataHandler.Load(_selectedProfileId);
-                if (!_multipleProfiles && _gameData == null)
-                {
-                    _gameData = NewGameData();
-                }
-            }
-            // TODO: Better logic
-#if UNITY_EDITOR
-            var editorScenes = EditorScenesSO.Instance;
-            if (editorScenes.firstSceneGroup != null)
-            {
-                if (_selectedProfileId == -1 && editorScenes.firstSceneGroup.Index != 0)
-                {
-                    _selectedProfileId = 1;
-                    _gameData = NewGameData();
-                }
-            }
-#endif
-        }
-
-        protected void OnEnable()
-        {
-            _saveGameBinding = new EventBinding<SaveGameEvent>(SaveGame);
-
-            EventBus<SaveGameEvent>.Register(_saveGameBinding);
-            SceneManager.sceneLoaded += HandleSceneLoaded;
-            SceneManager.sceneUnloaded += HandleSceneUnloaded;
-        }
-
-        protected void OnDisable()
-        {
-            EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
-            SceneManager.sceneLoaded -= HandleSceneLoaded;
-            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
-        }
-
         protected void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            LoadGame(scene);
+            if (scene.IsValid())
+            {
+                LoadGame(scene);
+            }
+            else
+            {
+                LoadGameFailedLog(scene);
+            }
+        }
+
+        protected void HandleSceneLoaded(SceneData scene)
+        {
+            SceneReference reference = scene.Reference;
+            if (reference.State != SceneReferenceState.Unsafe)
+            {
+                LoadGame(reference.LoadedScene);
+            }
+            else
+            {
+                LoadGameFailedLog(reference.LoadedScene);
+            }
         }
 
         protected void HandleSceneUnloaded(Scene scene)
@@ -260,11 +268,6 @@ namespace RenderDream.GameEssentials
             {
                 _sceneDataObjects.Remove(scene.handle);
             }
-        }
-
-        protected void OnApplicationQuit()
-        {
-            SaveGame();
         }
 
         protected (List<IDataPersistence<T1>>, List<IDataPersistence<T2>>) GetAllDataObjs()
@@ -279,6 +282,33 @@ namespace RenderDream.GameEssentials
             return (settingsDataObjs, gameDataObjs);
         }
 
+        private static void LoadGameFailedLog(Scene scene)
+        {
+            GameEssentialsDebug.LogError($"HandleSceneLoaded: {scene} is unloaded but LoadGame() is called");
+        }
+
+        protected void OnEnable()
+        {
+            _saveGameBinding = new EventBinding<SaveGameEvent>(SaveGame);
+
+            EventBus<SaveGameEvent>.Register(_saveGameBinding);
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            SceneLoader.Instance.SceneGroupManager.OnScenePersisted += HandleSceneLoaded;
+        }
+
+        protected void OnDisable()
+        {
+            EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            SceneLoader.Instance.SceneGroupManager.OnScenePersisted -= HandleSceneLoaded;
+        }
+
+        protected void OnApplicationQuit()
+        {
+            SaveGame();
+        }
     }
 
     [Serializable]

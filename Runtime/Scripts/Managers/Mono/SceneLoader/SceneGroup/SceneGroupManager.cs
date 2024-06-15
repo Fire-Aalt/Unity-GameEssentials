@@ -13,6 +13,7 @@ namespace RenderDream.GameEssentials
 {
     public class SceneGroupManager
     {
+        public event Action<SceneData> OnScenePersisted = delegate { };
         public event Action<string> OnSceneLoaded = delegate { };
         public event Action<string> OnSceneUnloaded = delegate { };
         public event Action OnSceneGroupLoaded = delegate { };
@@ -99,7 +100,9 @@ namespace RenderDream.GameEssentials
                 var sceneName = sceneAt.path;
                 if (ActiveSceneGroup.IsSceneInGroup(sceneAt) && !unloadDupScenes)
                 {
-                    HandleSceneLoaded(ActiveSceneGroup.GetSceneData(sceneAt));
+                    var sceneData = ActiveSceneGroup.GetSceneData(sceneAt);
+                    HandleSceneLoaded(sceneData);
+                    OnScenePersisted.Invoke(sceneData);
                     continue;
                 }
                 if (handleGroup.Handles.Any(h => h.IsValid() && h.Result.Scene.path == sceneName)) continue;
