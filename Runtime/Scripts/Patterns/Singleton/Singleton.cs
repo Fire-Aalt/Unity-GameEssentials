@@ -8,22 +8,15 @@ namespace RenderDream.GameEssentials
         public static bool HasInstance => instance != null;
         public static T TryGetInstance() => HasInstance ? instance : null;
         public static T Current => instance;
-        
+
         public static T Instance
         {
             get
             {
                 if (instance == null)
                 {
-                    instance = FindFirstObjectByType<T>();
-                    if (instance == null)
-                    {
-                        GameObject obj = new()
-                        {
-                            name = "AutoCreated" + typeof(T).Name
-                        };
-                        instance = obj.AddComponent<T>();
-                    }
+                    GameEssentialsDebug.LogError($"{instance} is null. Something tried to access {nameof(T)} during or before Awake()");
+                    return null;
                 }
 
                 return instance;
