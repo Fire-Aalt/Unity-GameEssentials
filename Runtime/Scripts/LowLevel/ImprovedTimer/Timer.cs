@@ -32,7 +32,7 @@ namespace RenderDream.GameEssentials
             unscaledTime = useUnscaledTime;
         }
 
-        public void Start()
+        public virtual void Start()
         {
             CurrentTime = initialTime;
             if (!IsRunning)
@@ -43,7 +43,7 @@ namespace RenderDream.GameEssentials
             }
         }
 
-        public void Stop()
+        public virtual void Stop()
         {
             if (IsRunning)
             {
