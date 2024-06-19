@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace RenderDream.GameEssentials
 {
@@ -7,7 +8,9 @@ namespace RenderDream.GameEssentials
         public Action OnIntervalDone = delegate { };
         public float intervalDuration;
 
-        public RepeatingTimer(float intervalDuration = 0, bool useUnscaledTime = false) : base(0, useUnscaledTime) 
+        public override float Progress => Mathf.Clamp(CurrentTime / intervalDuration, 0, 1);
+
+        public RepeatingTimer(float intervalDuration = 0, bool isManual = false, bool useUnscaledTime = false) : base(isManual, useUnscaledTime) 
         {
             this.intervalDuration = intervalDuration;
         }

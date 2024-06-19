@@ -1,6 +1,6 @@
 {
   "name": "com.renderdream.gameessentials",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "displayName": "FireAlt Game Essentials",
   "discription": "A package that focuses on adding essential classes, such as: managers, EventBus, BootLoader, etc.",
   "unity": "2022.3",

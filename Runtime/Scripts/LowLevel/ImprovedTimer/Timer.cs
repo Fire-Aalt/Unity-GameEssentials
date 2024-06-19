@@ -9,6 +9,7 @@ namespace RenderDream.GameEssentials
         public bool IsRunning { get; private set; }
 
         protected float initialTime;
+        protected bool manual;
         protected bool unscaledTime;
 
         protected float DeltaTime
@@ -21,14 +22,14 @@ namespace RenderDream.GameEssentials
             }
         }
 
-        public float Progress => Mathf.Clamp(CurrentTime / initialTime, 0, 1);
+        public virtual float Progress => Mathf.Clamp(CurrentTime / initialTime, 0, 1);
 
         public Action OnTimerStart = delegate { };
         public Action OnTimerStop = delegate { };
 
-        protected Timer(float value, bool useUnscaledTime)
+        protected Timer(bool isManual, bool useUnscaledTime)
         {
-            initialTime = value;
+            manual = isManual;
             unscaledTime = useUnscaledTime;
         }
 
@@ -38,7 +39,10 @@ namespace RenderDream.GameEssentials
             if (!IsRunning)
             {
                 IsRunning = true;
-                TimerManager.RegisterTimer(this);
+                if (!manual)
+                {
+                    TimerManager.RegisterTimer(this);
+                }
                 OnTimerStart.Invoke();
             }
         }
@@ -48,7 +52,10 @@ namespace RenderDream.GameEssentials
             if (IsRunning)
             {
                 IsRunning = false;
-                TimerManager.DeregisterTimer(this);
+                if (!manual)
+                {
+                    TimerManager.DeregisterTimer(this);
+                }
                 OnTimerStop.Invoke();
             }
         }
@@ -74,8 +81,10 @@ namespace RenderDream.GameEssentials
             Dispose(false);
         }
 
-        // Call Dispose to ensure deregistration of the timer from the TimerManager
-        // when the consumer is done with the timer or being destroyed
+        /// <summary>
+        /// Call Dispose to ensure deregistration of the timer from the TimerManager
+        /// when the consumer is done with the timer or being destroyed
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -86,7 +95,7 @@ namespace RenderDream.GameEssentials
         {
             if (disposed) return;
 
-            if (disposing)
+            if (disposing && !manual)
             {
                 TimerManager.DeregisterTimer(this);
             }

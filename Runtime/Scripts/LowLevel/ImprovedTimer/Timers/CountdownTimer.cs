@@ -5,7 +5,10 @@ namespace RenderDream.GameEssentials
     /// </summary>
     public class CountdownTimer : Timer
     {
-        public CountdownTimer(float duration = 0, bool useUnscaledTime = false) : base(duration, useUnscaledTime) { }
+        public CountdownTimer(float duration = 0, bool isManual = false, bool useUnscaledTime = false) : base(isManual, useUnscaledTime) 
+        {
+            initialTime = duration;
+        }
 
         public void Start(float duration)
         {

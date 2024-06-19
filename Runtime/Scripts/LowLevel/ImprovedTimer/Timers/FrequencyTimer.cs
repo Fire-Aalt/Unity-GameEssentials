@@ -14,7 +14,7 @@ namespace RenderDream.GameEssentials
 
         float timeThreshold;
 
-        public FrequencyTimer(int ticksPerSecond, bool useUnscaledTime = false) : base(0, useUnscaledTime)
+        public FrequencyTimer(int ticksPerSecond, bool isManual = false, bool useUnscaledTime = false) : base(isManual, useUnscaledTime)
         {
             CalculateTimeThreshold(ticksPerSecond);
         }
