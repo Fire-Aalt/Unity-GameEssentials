@@ -24,9 +24,6 @@ namespace RenderDream.GameEssentials
 
         public virtual float Progress => Mathf.Clamp(CurrentTime / initialTime, 0, 1);
 
-        public Action OnTimerStart = delegate { };
-        public Action OnTimerStop = delegate { };
-
         protected Timer(bool isManual, bool useUnscaledTime)
         {
             manual = isManual;
@@ -43,7 +40,6 @@ namespace RenderDream.GameEssentials
                 {
                     TimerManager.RegisterTimer(this);
                 }
-                OnTimerStart.Invoke();
             }
         }
 
@@ -56,23 +52,17 @@ namespace RenderDream.GameEssentials
                 {
                     TimerManager.DeregisterTimer(this);
                 }
-                OnTimerStop.Invoke();
             }
         }
 
         public abstract void Tick();
+        public abstract void Tick(float deltaTime);
         public abstract bool IsFinished { get; }
 
         public void Resume() => IsRunning = true;
         public void Pause() => IsRunning = false;
 
         public virtual void Reset() => CurrentTime = initialTime;
-
-        public virtual void Reset(float newTime)
-        {
-            initialTime = newTime;
-            Reset();
-        }
 
         bool disposed;
 

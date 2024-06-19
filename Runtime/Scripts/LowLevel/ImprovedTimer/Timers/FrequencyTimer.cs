@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace RenderDream.GameEssentials
 {
@@ -10,9 +9,9 @@ namespace RenderDream.GameEssentials
     {
         public int TicksPerSecond { get; private set; }
 
-        public Action OnTick = delegate { };
+        public Action<float> OnTick = delegate { };
 
-        float timeThreshold;
+        private float timeThreshold;
 
         public FrequencyTimer(int ticksPerSecond, bool isManual = false, bool useUnscaledTime = false) : base(isManual, useUnscaledTime)
         {
@@ -21,15 +20,20 @@ namespace RenderDream.GameEssentials
 
         public override void Tick()
         {
+            Tick(DeltaTime);
+        }
+
+        public override void Tick(float deltaTime)
+        {
+            if (IsRunning && CurrentTime < timeThreshold)
+            {
+                CurrentTime += deltaTime;
+            }
+
             if (IsRunning && CurrentTime >= timeThreshold)
             {
                 CurrentTime -= timeThreshold;
-                OnTick.Invoke();
-            }
-
-            if (IsRunning && CurrentTime < timeThreshold)
-            {
-                CurrentTime += Time.deltaTime;
+                OnTick.Invoke(timeThreshold);
             }
         }
 
@@ -51,5 +55,6 @@ namespace RenderDream.GameEssentials
             TicksPerSecond = ticksPerSecond;
             timeThreshold = 1f / TicksPerSecond;
         }
+
     }
 }

@@ -1,3 +1,5 @@
+using System;
+
 namespace RenderDream.GameEssentials
 {
     /// <summary>
@@ -5,28 +7,42 @@ namespace RenderDream.GameEssentials
     /// </summary>
     public class CountdownTimer : Timer
     {
+        public Action OnTimerFinished = delegate { };
+
         public CountdownTimer(float duration = 0, bool isManual = false, bool useUnscaledTime = false) : base(isManual, useUnscaledTime) 
         {
-            initialTime = duration;
+            Reset(duration);
         }
 
         public void Start(float duration)
         {
-            initialTime = duration;
+            Reset(duration);
             Start();
         }
 
         public override void Tick()
         {
+            Tick(DeltaTime);
+        }
+
+        public override void Tick(float deltaTime)
+        {
             if (IsRunning && CurrentTime > 0)
             {
-                CurrentTime -= DeltaTime;
+                CurrentTime -= deltaTime;
             }
 
             if (IsRunning && CurrentTime <= 0)
             {
                 Stop();
+                OnTimerFinished.Invoke();
             }
+        }
+
+        public void Reset(float newDuration)
+        {
+            initialTime = newDuration;
+            Reset();
         }
 
         public override bool IsFinished => CurrentTime <= 0;
