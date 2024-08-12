@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
 using UnityEngine;
@@ -22,7 +23,7 @@ namespace RenderDream.GameEssentials
 
         public SceneGroup ActiveSceneGroup { get; private set; }
 
-        public async UniTask LoadScenes(SceneGroup group, IProgress<float> progress, bool reloadDupScenes, int loadDelay = 0)
+        public async UniTask LoadScenes(SceneGroup group, IProgress<float> progress, bool reloadDupScenes, int loadDelay, CancellationToken token)
         {
             ActiveSceneGroup = group;
             var loadedScenes = new List<string>();
@@ -31,7 +32,7 @@ namespace RenderDream.GameEssentials
             SceneReference bootLoader = ScenesDataSO.Instance.bootLoaderScene;
             SceneManager.SetActiveScene(bootLoader.LoadedScene);
 
-            await UnloadScenes(reloadDupScenes);
+            await UnloadScenes(reloadDupScenes, token);
 
             int sceneCount = SceneManager.sceneCount;
             for (var i = 0; i < sceneCount; i++)
@@ -61,18 +62,18 @@ namespace RenderDream.GameEssentials
 
                     sceneHandle.Completed += AsyncOperation => HandleSceneLoaded(sceneData);
                 }
+            }
 
-                if (loadDelay > 0)
-                {
-                    await UniTask.Delay(loadDelay);
-                }
+            if (loadDelay > 0)
+            {
+                await UniTask.Delay(loadDelay, cancellationToken: token);
             }
 
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone || !handleGroup.IsDone)
             {
                 progress?.Report((operationGroup.Progress + handleGroup.Progress) / 2);
-                await UniTask.Delay(1);
+                await UniTask.Delay(1, cancellationToken: token);
             }
 
             OnSceneGroupLoaded.Invoke();
@@ -87,7 +88,7 @@ namespace RenderDream.GameEssentials
             OnSceneLoaded.Invoke(sceneData.Reference.Path);
         }
 
-        public async UniTask UnloadScenes(bool unloadDupScenes)
+        public async UniTask UnloadScenes(bool unloadDupScenes, CancellationToken token)
         {
             var scenesToUnload = new List<string>();
             int sceneCount = SceneManager.sceneCount;
@@ -135,7 +136,7 @@ namespace RenderDream.GameEssentials
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone)
             {
-                await UniTask.Delay(1);
+                await UniTask.Delay(1, cancellationToken: token);
             }
 
             // Optional: UnloadUnusedAssets - unloads all unused assets from memory

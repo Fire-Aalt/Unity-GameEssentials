@@ -7,14 +7,14 @@ namespace RenderDream.GameEssentials
     [CreateAssetMenu(menuName = "Data/Scenes Data")]
     public class ScenesDataSO : ScriptableObject
     {
-        private static readonly string _scenesDataPath = "ScenesData";
+        private const string SCENES_DATA_PATH = "ScenesData";
         public static ScenesDataSO Instance
         {
             get
             {
                 if (_scenesData == null)
                 {
-                    _scenesData = Resources.Load<ScenesDataSO>(_scenesDataPath);
+                    _scenesData = Resources.Load<ScenesDataSO>(SCENES_DATA_PATH);
                 }
                 return _scenesData;
             }
@@ -25,13 +25,5 @@ namespace RenderDream.GameEssentials
         public SceneReference bootLoaderScene;
         [Title("Scenes")]
         [OnValueChanged("IndexSceneGroups")] public SceneGroup[] sceneGroups;
-
-        public void IndexSceneGroups()
-        {
-            for (int i = 0; i < sceneGroups.Length; i++)
-            {
-                sceneGroups[i].Index = i;
-            }
-        }
     }
 }

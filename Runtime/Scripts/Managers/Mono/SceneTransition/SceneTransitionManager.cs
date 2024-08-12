@@ -1,6 +1,7 @@
 using Cysharp.Threading.Tasks;
 using MoreMountains.Feedbacks;
 using Sirenix.OdinInspector;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -67,22 +68,22 @@ namespace RenderDream.GameEssentials
             loadingCamera.enabled = enable;
         }
 
-        public virtual async UniTask TransitionIn()
+        public virtual async UniTask TransitionIn(CancellationToken token)
         {
             transitionInPlayer.PlayFeedbacks();
 
-            await LerpCanvasGroupAlpha(transitionDuration, true);
+            await LerpCanvasGroupAlpha(transitionDuration, true, token);
         }
 
-        public virtual async UniTask TransitionOut()
+        public virtual async UniTask TransitionOut(CancellationToken token)
         {
             transitionOutPlayer.PlayFeedbacks();
 
-            await UniTask.WaitForSeconds(initializeSceneGroupDuration, ignoreTimeScale: true);
-            await LerpCanvasGroupAlpha(transitionDuration, false);
+            await UniTask.WaitForSeconds(initializeSceneGroupDuration, ignoreTimeScale: true, cancellationToken: token);
+            await LerpCanvasGroupAlpha(transitionDuration, false, token);
         }
 
-        protected virtual async UniTask LerpCanvasGroupAlpha(float duration, bool setActive)
+        protected virtual async UniTask LerpCanvasGroupAlpha(float duration, bool setActive, CancellationToken token)
         {
             float startAlpha = setActive ? 0f : 1f;
             float endAlpha = setActive ? 1f : 0f;
@@ -93,7 +94,7 @@ namespace RenderDream.GameEssentials
                 elapsedTime += Time.unscaledDeltaTime;
 
                 loadingCanvasGroup.alpha = Mathf.Lerp(startAlpha, endAlpha, elapsedTime / duration);
-                await UniTask.Yield();
+                await UniTask.Yield(cancellationToken: token);
             }
 
             SetCanvasGroupActive(setActive);

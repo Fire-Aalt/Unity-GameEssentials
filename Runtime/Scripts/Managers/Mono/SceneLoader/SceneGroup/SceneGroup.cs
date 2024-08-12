@@ -14,7 +14,6 @@ namespace RenderDream.GameEssentials
         [OnValueChanged("SetDirty")] public SceneData MainScene;
         [OnValueChanged("SetDirty")] public List<SceneData> AdditiveScenes;
 
-        public int Index { get; set; }
         private bool _isDirty = true;
 
         public List<SceneData> Scenes

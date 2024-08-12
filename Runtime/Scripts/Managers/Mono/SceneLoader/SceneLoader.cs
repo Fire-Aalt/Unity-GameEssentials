@@ -34,6 +34,9 @@ namespace RenderDream.GameEssentials
                 SceneGroupManager.OnSceneUnloaded += sceneName => GameEssentialsDebug.Log("Unloaded: " + sceneName);
                 SceneGroupManager.OnSceneGroupLoaded += () => GameEssentialsDebug.Log($"Scene group '{SceneGroupManager.ActiveSceneGroup.GroupName}' loaded");
             }
+
+            IsTransitioning = false;
+            IsLoading = false;
         }
 
         public virtual async UniTask LoadSceneGroup(int index, bool reloadDupScenes, SceneTransition transition)
@@ -46,7 +49,7 @@ namespace RenderDream.GameEssentials
             var loadingProgress = SceneTransitionManager.InitializeProgressBar();
             if (transition == SceneTransition.TransitionInAndOut)
             {
-                await SceneTransitionManager.TransitionIn();
+                await SceneTransitionManager.TransitionIn(destroyCancellationToken);
             }
             MMTimeManager.Current.SetTimeScaleTo(1f);
             MMSoundManager.Current.FreeAllLoopingSounds();
@@ -54,14 +57,14 @@ namespace RenderDream.GameEssentials
             // Enable camera -> LoadScenes -> Disable camera
             IsLoading = true;
             SceneTransitionManager.EnableLoadingCamera(true);
-            await SceneGroupManager.LoadScenes(scenesData.sceneGroups[index], loadingProgress, reloadDupScenes, sceneLoadDelay);
+            await SceneGroupManager.LoadScenes(scenesData.sceneGroups[index], loadingProgress, reloadDupScenes, sceneLoadDelay, destroyCancellationToken);
             SceneTransitionManager.EnableLoadingCamera(false);
             IsLoading = false;
 
             // TransitionOut
             if (transition == SceneTransition.TransitionOut || transition == SceneTransition.TransitionInAndOut)
             {
-                await SceneTransitionManager.TransitionOut();
+                await SceneTransitionManager.TransitionOut(destroyCancellationToken);
             }
             IsTransitioning = false;
         }

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
-using System;
 
 namespace RenderDream.GameEssentials
 {
@@ -13,7 +12,6 @@ namespace RenderDream.GameEssentials
         private static async UniTaskVoid OnAfterSceneLoad()
         {
             scenesData = ScenesDataSO.Instance;
-            scenesData.IndexSceneGroups();
 
             if (scenesData == null)
             {
@@ -23,13 +21,13 @@ namespace RenderDream.GameEssentials
                 return;
             }
 
-            SceneGroup firstSceneGroup;
+            int firstSceneGroupIndex;
             SceneReference bootLoaderScene = scenesData.bootLoaderScene;
             
             if (bootLoaderScene.LoadedScene.IsValid())
             {
-                firstSceneGroup = GetFirstSceneGroup();
-                if (firstSceneGroup == null)
+                firstSceneGroupIndex = GetFirstSceneGroupIndex(scenesData.sceneGroups);
+                if (firstSceneGroupIndex == -1)
                 {
                     Debug.LogError($"No MainMenu Scene was found in {scenesData}." +
                         $" Please, ensure you have atleast one SceneDependency with type of {SceneType.MainMenu}");
@@ -43,18 +41,22 @@ namespace RenderDream.GameEssentials
             }
 
             await UniTask.WaitUntil(() => SceneLoader.Current != null);
-            await SceneLoader.Current.LoadSceneGroup(firstSceneGroup.Index, false, SceneTransition.TransitionOut);
+            await SceneLoader.Current.LoadSceneGroup(firstSceneGroupIndex, false, SceneTransition.TransitionOut);
         }
 
-        private static SceneGroup GetFirstSceneGroup()
+        private static int GetFirstSceneGroupIndex(SceneGroup[] sceneGroups)
         {
-            SceneGroup sceneGroup = null;
+            int firstSceneGroupIndex = -1;
+
 #if UNITY_EDITOR
-            sceneGroup = EditorScenesSO.Instance.firstSceneGroup;
+            firstSceneGroupIndex = EditorScenesDataWrapper.GetFirstSceneGroupIndex();
 #endif
-            sceneGroup ??= ScenesDataSO.Instance.sceneGroups[0];
-            
-            return sceneGroup;
+            if (firstSceneGroupIndex == -1 && sceneGroups.Length > 0)
+            {
+                firstSceneGroupIndex = 0;
+            }
+
+            return firstSceneGroupIndex;
         }
     }
 }

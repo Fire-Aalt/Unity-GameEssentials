@@ -100,19 +100,22 @@ namespace RenderDream.GameEssentials
                     _gameData = NewGameData();
                 }
             }
+
             // TODO: Better logic
 #if UNITY_EDITOR
-            var editorScenes = EditorScenesSO.Instance;
-            if (editorScenes.firstSceneGroup != null)
+            int firstSceneGroupIndex = EditorScenesDataWrapper.GetFirstSceneGroupIndex();
+
+            if (_selectedProfileId == -1 && firstSceneGroupIndex != 0)
             {
-                if (_selectedProfileId == -1 && editorScenes.firstSceneGroup.Index != 0)
-                {
-                    _selectedProfileId = 1;
-                    _gameData = NewGameData();
-                }
+                _selectedProfileId = 1;
+                _gameData = NewGameData();
             }
 #endif
+
+            LoadExistingScenesData();
         }
+
+
 
         protected virtual void Init()
         {
@@ -152,40 +155,6 @@ namespace RenderDream.GameEssentials
             (var settingsDataObjs, var gameDataObjs) = GetAllDataObjs();
 
             Load(settingsDataObjs, gameDataObjs);
-        }
-
-        public void LoadGame(Scene scene)
-        {
-            if (_disableDataPersistence) return;
-
-            if (!_sceneDataObjects.ContainsKey(scene.handle))
-            {
-                var dataObjects = new DataPersistenceObjects<T1, T2>();
-                dataObjects.Init(scene);
-                _sceneDataObjects.Add(scene.handle, dataObjects);
-                Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
-            }
-        }
-
-        protected void Load(List<IDataPersistence<T1>> settingsDataObjs, List<IDataPersistence<T2>> gameDataObjs)
-        {
-            _settingsData ??= _settingsDataHandler.Load();
-            _settingsData ??= NewSettingsData();
-
-            if (_settingsData != null)
-            {
-                foreach (IDataPersistence<T1> settingsDataObj in settingsDataObjs)
-                {
-                    settingsDataObj.LoadData(_settingsData);
-                }
-            }
-            if (_gameData != null)
-            {
-                foreach (IDataPersistence<T2> gameDataObj in gameDataObjs)
-                {
-                    gameDataObj.LoadData(_gameData);
-                }
-            }
         }
 
         public void SaveGame()
@@ -234,6 +203,50 @@ namespace RenderDream.GameEssentials
 
             _selectedProfileId = newProfileId;
         }
+
+        private void LoadGame(Scene scene)
+        {
+            if (_disableDataPersistence) return;
+
+            if (!_sceneDataObjects.ContainsKey(scene.handle))
+            {
+                var dataObjects = new DataPersistenceObjects<T1, T2>();
+                dataObjects.Init(scene);
+                _sceneDataObjects.Add(scene.handle, dataObjects);
+                Load(dataObjects.settingsDataObjs, dataObjects.gameDataObjs);
+            }
+        }
+
+        private void LoadExistingScenesData()
+        {
+            int sceneCount = SceneManager.sceneCount;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                LoadGame(SceneManager.GetSceneAt(i));
+            }
+        }
+
+        protected void Load(List<IDataPersistence<T1>> settingsDataObjs, List<IDataPersistence<T2>> gameDataObjs)
+        {
+            _settingsData ??= _settingsDataHandler.Load();
+            _settingsData ??= NewSettingsData();
+
+            if (_settingsData != null)
+            {
+                foreach (IDataPersistence<T1> settingsDataObj in settingsDataObjs)
+                {
+                    settingsDataObj.LoadData(_settingsData);
+                }
+            }
+            if (_gameData != null)
+            {
+                foreach (IDataPersistence<T2> gameDataObj in gameDataObjs)
+                {
+                    gameDataObj.LoadData(_gameData);
+                }
+            }
+        }
+
 
         public Dictionary<int, T2> GetAllProfilesGameData() => _gameDataHandler.LoadAllProfiles();
 
