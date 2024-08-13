@@ -115,8 +115,6 @@ namespace RenderDream.GameEssentials
             LoadExistingScenesData();
         }
 
-
-
         protected virtual void Init()
         {
             string profileDirectoryPattern, profileFilePattern;
@@ -307,7 +305,6 @@ namespace RenderDream.GameEssentials
             EventBus<SaveGameEvent>.Register(_saveGameBinding);
             SceneManager.sceneLoaded += HandleSceneLoaded;
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
-            SceneLoader.Instance.SceneGroupManager.OnScenePersisted += HandleSceneLoaded;
         }
 
         protected void OnDisable()
@@ -315,6 +312,15 @@ namespace RenderDream.GameEssentials
             EventBus<SaveGameEvent>.Deregister(_saveGameBinding);
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+        }
+
+        private void Start()
+        {
+            SceneLoader.Instance.SceneGroupManager.OnScenePersisted += HandleSceneLoaded;
+        }
+
+        private void OnDestroy()
+        {
             SceneLoader.Instance.SceneGroupManager.OnScenePersisted -= HandleSceneLoaded;
         }
 

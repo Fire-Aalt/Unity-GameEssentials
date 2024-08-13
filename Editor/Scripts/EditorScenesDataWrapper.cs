@@ -1,4 +1,6 @@
-﻿namespace RenderDream.GameEssentials
+﻿
+#if UNITY_EDITOR
+namespace RenderDream.GameEssentials
 {
     public static class EditorScenesDataWrapper
     {
@@ -6,26 +8,16 @@
         private const string OPEN_SCENE_INDEXED = "openedScene_";
         private const string FIRST_SCENE_GROUP_INDEX = "firstSceneGroupIndex";
 
-        public static void SetOpenedScenes(string[] scenePaths)
+        public static int GetOpenedScenesCount()
         {
-            var prevLoadedScenesCount = GetOpenedScenesCount();
-            for (int i = 0; i < prevLoadedScenesCount; i++)
-            {
-                LocalEditorPrefs.DeleteKey(OPEN_SCENE_INDEXED + i);
-            }
-
-            LocalEditorPrefs.SetInt(OPENED_SCENES_COUNT, scenePaths.Length);
-            for (int i = 0; i < scenePaths.Length; i++)
-            {
-                LocalEditorPrefs.SetString(OPEN_SCENE_INDEXED + i, scenePaths[i]);
-            }
+            return LocalEditorPrefs.GetInt(OPENED_SCENES_COUNT);
         }
 
-        public static void SetFirstSceneGroupIndex(int index)
+        public static int GetFirstSceneGroupIndex()
         {
-            LocalEditorPrefs.SetInt(FIRST_SCENE_GROUP_INDEX, index);
+            return LocalEditorPrefs.GetInt(FIRST_SCENE_GROUP_INDEX);
         }
-        
+
         public static string[] GetOpenedScenes()
         {
             int scenesCount = GetOpenedScenesCount();
@@ -38,14 +30,30 @@
             return openedScenes;
         }
 
-        public static int GetOpenedScenesCount()
+        public static void SetOpenedScenes(string[] scenePaths)
         {
-            return LocalEditorPrefs.GetInt(OPENED_SCENES_COUNT);
+            LocalEditorPrefs.SetInt(OPENED_SCENES_COUNT, scenePaths.Length);
+            for (int i = 0; i < scenePaths.Length; i++)
+            {
+                LocalEditorPrefs.SetString(OPEN_SCENE_INDEXED + i, scenePaths[i]);
+            }
         }
 
-        public static int GetFirstSceneGroupIndex()
+        public static void SetFirstSceneGroupIndex(int index)
         {
-            return LocalEditorPrefs.GetInt(FIRST_SCENE_GROUP_INDEX);
+            LocalEditorPrefs.SetInt(FIRST_SCENE_GROUP_INDEX, index);
+        }
+
+        public static void ClearData()
+        {
+            var openedScenesCount = GetOpenedScenesCount();
+            for (int i = 0; i < openedScenesCount; i++)
+            {
+                LocalEditorPrefs.DeleteKey(OPEN_SCENE_INDEXED + i);
+            }
+            LocalEditorPrefs.DeleteKey(OPENED_SCENES_COUNT);
+            LocalEditorPrefs.DeleteKey(FIRST_SCENE_GROUP_INDEX);
         }
     }
 }
+#endif

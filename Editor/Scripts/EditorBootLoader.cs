@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using Eflatun.SceneReference;
@@ -82,6 +83,7 @@ namespace RenderDream.GameEssentials
             {
                 EditorSceneManager.CloseScene(bootLoaderScene.LoadedScene, true);
             }
+            EditorScenesDataWrapper.ClearData();
         }
 
         private static int GetFirstSceneGroupIndex(SceneGroup[] sceneGroups, List<string> openedScenes)
@@ -110,3 +112,4 @@ namespace RenderDream.GameEssentials
         }
     }
 }
+#endif

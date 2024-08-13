@@ -1,4 +1,6 @@
-﻿using System.Security.Cryptography;
+﻿#if UNITY_EDITOR
+
+using System.Security.Cryptography;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -174,3 +176,4 @@ namespace RenderDream.GameEssentials
         }
     }
 }
+#endif
