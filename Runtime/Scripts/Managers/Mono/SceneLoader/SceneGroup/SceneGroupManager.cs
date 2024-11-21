@@ -2,13 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
+using Unity.Entities;
+using Unity.Scenes;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
+using Hash128 = Unity.Entities.Hash128;
+using SceneReference = Eflatun.SceneReference.SceneReference;
 
 namespace RenderDream.GameEssentials
 {
@@ -19,8 +24,8 @@ namespace RenderDream.GameEssentials
         public event Action<string> OnSceneUnloaded = delegate { };
         public event Action OnSceneGroupLoaded = delegate { };
 
-        readonly AsyncOperationHandleGroup handleGroup = new(10);
-
+        private readonly AsyncOperationHandleGroup _handleGroup = new(10);
+        
         public SceneGroup ActiveSceneGroup { get; private set; }
 
         public async UniTask LoadScenes(SceneGroup group, IProgress<float> progress, bool reloadDupScenes, int loadDelay, CancellationToken token)
@@ -40,6 +45,9 @@ namespace RenderDream.GameEssentials
                 loadedScenes.Add(SceneManager.GetSceneAt(i).name);
             }
 
+            // Load SubScenes before any other scenes
+            await LoadEntityScenes(group, SubSceneLoadMode.BeforeSceneGroup, token);
+
             var totalScenesToLoad = ActiveSceneGroup.Scenes.Count;
             var operationGroup = new AsyncOperationGroup(totalScenesToLoad);
 
@@ -47,36 +55,55 @@ namespace RenderDream.GameEssentials
             {
                 var sceneData = group.Scenes[i];
                 if (reloadDupScenes == false && loadedScenes.Contains(sceneData.Name)) continue;
-
+                
                 if (sceneData.Reference.State == SceneReferenceState.Regular)
                 {
                     var operation = SceneManager.LoadSceneAsync(sceneData.Reference.Path, LoadSceneMode.Additive);
                     operationGroup.Operations.Add(operation);
 
-                    operation.completed += AsyncOperation => HandleSceneLoaded(sceneData);
+                    operation.completed += _ => HandleSceneLoaded(sceneData);
                 }
                 else if (sceneData.Reference.State == SceneReferenceState.Addressable)
                 {
                     var sceneHandle = Addressables.LoadSceneAsync(sceneData.Reference.Path, LoadSceneMode.Additive);
-                    handleGroup.Handles.Add(sceneHandle);
+                    _handleGroup.Handles.Add(sceneHandle);
 
-                    sceneHandle.Completed += AsyncOperation => HandleSceneLoaded(sceneData);
+                    sceneHandle.Completed += _ => HandleSceneLoaded(sceneData);
                 }
             }
-
+            
             if (loadDelay > 0)
             {
                 await UniTask.Delay(loadDelay, cancellationToken: token);
             }
 
             // Wait until all AsyncOperations in the group are done
-            while (!operationGroup.IsDone || !handleGroup.IsDone)
+            while (!operationGroup.IsDone || !_handleGroup.IsDone)
             {
-                progress?.Report((operationGroup.Progress + handleGroup.Progress) / 2);
-                await UniTask.Delay(1, cancellationToken: token);
+                progress?.Report((operationGroup.Progress + _handleGroup.Progress) / 2);
+                await UniTask.Delay(1, true, cancellationToken: token);
             }
 
+            await LoadEntityScenes(group, SubSceneLoadMode.AfterSceneGroup, token);
+
             OnSceneGroupLoaded.Invoke();
+        }
+
+        private async UniTask LoadEntityScenes(SceneGroup group, SubSceneLoadMode loadMode, CancellationToken token)
+        {
+            var subSceneLoaderSystem = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SubSceneLoaderSystem>();
+            foreach (var subSceneReference in group.SubScenes)
+            {
+                if (!subSceneReference.IsSubSceneLoaded && subSceneReference.LoadMode == loadMode)
+                {
+                    subSceneLoaderSystem.AddLoadRequest(subSceneReference.RuntimeHash);
+                }
+            }
+            
+            while (!subSceneLoaderSystem.AreAllRequestedSubScenesLoaded())
+            {
+                await UniTask.Delay(1, true, cancellationToken: token);
+            }
         }
 
         private void HandleSceneLoaded(SceneData sceneData)
@@ -88,7 +115,7 @@ namespace RenderDream.GameEssentials
             OnSceneLoaded.Invoke(sceneData.Reference.Path);
         }
 
-        public async UniTask UnloadScenes(bool unloadDupScenes, CancellationToken token)
+        private async UniTask UnloadScenes(bool unloadDupScenes, CancellationToken token)
         {
             var scenesToUnload = new List<string>();
             int sceneCount = SceneManager.sceneCount;
@@ -106,7 +133,10 @@ namespace RenderDream.GameEssentials
                     OnScenePersisted.Invoke(sceneData);
                     continue;
                 }
-                if (handleGroup.Handles.Any(h => h.IsValid() && h.Result.Scene.path == sceneName)) continue;
+                
+                if (sceneAt.isSubScene) continue;
+                
+                if (_handleGroup.Handles.Any(h => h.IsValid() && h.Result.Scene.path == sceneName)) continue;
 
                 scenesToUnload.Add(sceneName);
             }
@@ -124,14 +154,14 @@ namespace RenderDream.GameEssentials
                 OnSceneUnloaded.Invoke(scene);
             }
 
-            foreach (var handle in handleGroup.Handles)
+            foreach (var handle in _handleGroup.Handles)
             {
                 if (handle.IsValid())
                 {
                     _ = Addressables.UnloadSceneAsync(handle);
                 }
             }
-            handleGroup.Handles.Clear();
+            _handleGroup.Handles.Clear();
 
             // Wait until all AsyncOperations in the group are done
             while (!operationGroup.IsDone)
@@ -170,4 +200,43 @@ namespace RenderDream.GameEssentials
         }
     }
     
+    
+    public partial class SubSceneLoaderSystem : SystemBase
+    {
+        protected override void OnUpdate()
+        {
+            
+        }
+
+        public void AddLoadRequest(Hash128 subSceneHash)
+        {
+            var loadProgressEntity = SceneSystem.LoadSceneAsync(World.Unmanaged, subSceneHash);
+            
+            var dataEntity = EntityManager.CreateEntity();
+            EntityManager.AddComponentData(dataEntity, new SubSceneLoadRequest
+            {
+                Value = loadProgressEntity
+            });
+        }
+
+        public bool AreAllRequestedSubScenesLoaded()
+        {
+            var requests = 0;
+            foreach (var requestRO in SystemAPI.Query<RefRO<SubSceneLoadRequest>>())
+            {
+                if (SceneSystem.GetSceneStreamingState(World.Unmanaged, requestRO.ValueRO.Value) !=
+                    SceneSystem.SceneStreamingState.LoadedSuccessfully)
+                {
+                    requests++;
+                }
+            }
+            return requests == 0;
+        }
+    }
+
+    public struct SubSceneLoadRequest : IComponentData
+    {
+        public Entity Value;
+    }
+
 }

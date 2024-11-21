@@ -18,6 +18,11 @@ namespace RenderDream.GameEssentials
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
+            if (ScenesDataSO.Instance == null)
+            {
+                return;
+            }
+            
             switch (state)
             {
                 case PlayModeStateChange.ExitingEditMode:
@@ -28,7 +33,7 @@ namespace RenderDream.GameEssentials
                     break;
             }
         }
-
+        
         private static void SaveScenesDataBeforePlayMode()
         {
             ScenesDataSO scenesData = ScenesDataSO.Instance;
@@ -40,7 +45,10 @@ namespace RenderDream.GameEssentials
             var openedScenes = new List<string>();
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
-                openedScenes.Add(SceneManager.GetSceneAt(i).path);
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.isSubScene) continue;
+                
+                openedScenes.Add(scene.path);
             }
             int firstSceneGroupIndex = GetFirstSceneGroupIndex(scenesData.sceneGroups, openedScenes);
 
@@ -52,7 +60,7 @@ namespace RenderDream.GameEssentials
             {
                 return;
             }
-
+            
             // Open and move _BootLoader scene as first
             Scene topScene = SceneManager.GetSceneAt(0);
             if (!bootLoaderScene.LoadedScene.IsValid())
@@ -71,18 +79,38 @@ namespace RenderDream.GameEssentials
                 SceneReference mainScene = scenesData.sceneGroups[firstSceneGroupIndex].MainScene.Reference;
                 EditorSceneManager.MoveSceneAfter(mainScene.LoadedScene, topScene);
             }
+            
+            if (scenesData.simulateBuild)
+            {
+                SceneManager.SetActiveScene(SceneManager.GetSceneAt(0));
+                for (int i = SceneManager.sceneCount - 1; i >= 1; i--)
+                {
+                    EditorSceneManager.CloseScene(SceneManager.GetSceneAt(i), true);
+                }
+            }
         }
 
         private static void TearDownAfterPlayMode()
         {
+            ScenesDataSO scenesData = ScenesDataSO.Instance;
             SceneReference bootLoaderScene = ScenesDataSO.Instance.bootLoaderScene;
 
-            // Close _BootLoader scene if it was not opened
             var openedScenes = EditorScenesDataWrapper.GetOpenedScenes();
+            
+            if (scenesData.simulateBuild)
+            {
+                foreach (var openedScene in openedScenes)
+                {
+                    EditorSceneManager.OpenScene(openedScene, OpenSceneMode.Additive);
+                }
+            }
+            
+            // Close _BootLoader scene if it was not opened
             if (string.IsNullOrEmpty(openedScenes.FirstOrDefault(p => p == bootLoaderScene.Path)))
             {
                 EditorSceneManager.CloseScene(bootLoaderScene.LoadedScene, true);
             }
+            
             EditorScenesDataWrapper.ClearData();
         }
 

@@ -9,7 +9,7 @@ namespace RenderDream.GameEssentials
         private static ScenesDataSO scenesData;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static async UniTaskVoid OnAfterSceneLoad()
+        private static async void OnAfterSceneLoad()
         {
             scenesData = ScenesDataSO.Instance;
 
@@ -21,6 +21,11 @@ namespace RenderDream.GameEssentials
                 return;
             }
 
+            if (scenesData.simulateBuild)
+            {
+                Debug.LogWarning("Simulate Build mode is ON. It will affect loading performance");
+            }
+            
             int firstSceneGroupIndex;
             SceneReference bootLoaderScene = scenesData.bootLoaderScene;
             
@@ -30,7 +35,7 @@ namespace RenderDream.GameEssentials
                 if (firstSceneGroupIndex == -1)
                 {
                     Debug.LogError($"No MainMenu Scene was found in {scenesData}." +
-                        $" Please, ensure you have atleast one SceneDependency with type of {SceneType.MainMenu}");
+                        $" Please, ensure you have at least one SceneDependency with type of {SceneType.MainMenu}");
                     return;
                 }
             }

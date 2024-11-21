@@ -1,3 +1,4 @@
+using System;
 using Eflatun.SceneReference;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -21,9 +22,19 @@ namespace RenderDream.GameEssentials
         }
         private static ScenesDataSO _scenesData;
 
+        public bool simulateBuild;
+        
         [Title("_BootLoader")]
         public SceneReference bootLoaderScene;
-        [Title("Scenes")]
-        [OnValueChanged("IndexSceneGroups")] public SceneGroup[] sceneGroups;
+
+        [Title("Scenes")] public SceneGroup[] sceneGroups;
+
+        private void OnValidate()
+        {
+            foreach (var group in sceneGroups)
+            {
+                group.Validate();
+            }
+        }
     }
 }

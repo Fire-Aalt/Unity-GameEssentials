@@ -9,7 +9,7 @@ using UnityEditor.SceneManagement;
 // Special thanks to Unity for providing such implementation
 
 // This component gives a GameObject a stable, non-replicatable Globally Unique IDentifier.
-// It can be used to reference a specific instance of an object no matter where it is.
+// It can be used to editorReference a specific instance of an object no matter where it is.
 // This can also be used for other systems, such as Save/Load game
 namespace RenderDream.GameEssentials
 {

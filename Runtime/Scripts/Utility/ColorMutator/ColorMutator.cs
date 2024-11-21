@@ -1,4 +1,4 @@
-// Unity C# reference source
+// Unity C# editorReference source
 // Copyright (c) Unity Technologies.
 
 using System;
