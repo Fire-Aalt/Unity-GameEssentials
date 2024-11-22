@@ -2,52 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Eflatun.SceneReference;
-using Game;
 using Sirenix.OdinInspector;
-using Unity.Entities.Content;
-using Unity.Scenes;
-using UnityEditor;
-using UnityEditor.SceneManagement;
-using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
-using Hash128 = Unity.Entities.Hash128;
 using SceneReference = Eflatun.SceneReference.SceneReference;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
 
 namespace RenderDream.GameEssentials
 {
     [Serializable]
-    public class SubSceneReference
-    {
-        [SerializeField, ReadOnly] private SceneReference _reference;
-        [SerializeField] private SubSceneLoadMode _loadMode;
-        
-        [SerializeField, HideInInspector] private Hash128 _hash;
-        
-        public SubSceneReference(SubScene subScene)
-        {
-            _reference = new SceneReference(subScene.SceneAsset);
-            AddressableUtils.CreateAssetEntry(subScene.SceneAsset, "SubSceneReferences");
-            _hash = AssetDatabase.GUIDFromAssetPath(_reference.Path);
-        }
-
-        public SubSceneLoadMode LoadMode => _loadMode;
-        public Hash128 RuntimeHash => _hash;
-        public SceneReference SceneReference => _reference;
-        public bool IsSubSceneLoaded => _reference.LoadedScene.isLoaded;
-    }
-
-    public enum SubSceneLoadMode
-    {
-        BeforeSceneGroup,
-        AfterSceneGroup
-    }
-    
-    [Serializable]
     public class SceneGroup
     {
         public string GroupName = "New Scene Group";
+        [BoxGroup("Main Scene Data")]
         [OnValueChanged("SetDirty")] public SceneData MainScene;
+        [BoxGroup("Additive Scenes Data")]
         [OnValueChanged("SetDirty")] public List<SceneData> AdditiveScenes;
         
         private bool _isDirty = true;
@@ -69,6 +40,7 @@ namespace RenderDream.GameEssentials
         }
         private List<SceneData> _scenes;
         
+#if UNITY_ENTITIES
         public List<SubSceneReference> SubScenes
         {
             get
@@ -85,6 +57,7 @@ namespace RenderDream.GameEssentials
             }
         }
         private List<SubSceneReference> _subScenes;
+#endif
         
         public bool IsSceneInGroup(Scene scene)
         {
@@ -103,13 +76,17 @@ namespace RenderDream.GameEssentials
             return Scenes.FirstOrDefault(s => s.Reference.Path == scene.path);
         }
 
+#if UNITY_EDITOR
         public void Validate()
         {
-            ValidateSubScenes();
+            foreach (var subScene in SubScenes)
+            {
+                subScene.RefreshEditorData();
+            }
         }
         
-        [Button]
-        private void ValidateSubScenes()
+#if UNITY_ENTITIES
+        public void ValidateSubScenes()
         {
             _isDirty = true;
             foreach (var sceneData in Scenes)
@@ -136,10 +113,11 @@ namespace RenderDream.GameEssentials
                 foreach (var subScene in EditorSubSceneUtils.GetSubScenes(scene))
                 {
                     var reference =
-                        sceneData.subScenes.FirstOrDefault(r => r.SceneReference.Path == subScene.EditableScenePath);
+                        sceneData.subScenes.FirstOrDefault(r => r.ScenePathEditor == subScene.EditableScenePath);
                     if (reference == null)
                     {
                         reference = new SubSceneReference(subScene);
+
                         sceneData.subScenes.Add(reference);
                     }
                     added.Add(reference);
@@ -153,11 +131,12 @@ namespace RenderDream.GameEssentials
                 }
             }
         }
+#endif
+#endif
 
         private void SetDirty()
         {
             _isDirty = true;
-            ValidateSubScenes();
         }
     }
 
@@ -168,7 +147,10 @@ namespace RenderDream.GameEssentials
         public SceneType SceneType;
         
         public string Name => Reference.Name;
+        
+#if UNITY_ENTITIES
         public List<SubSceneReference> subScenes;
+#endif
     }
     
     public enum SceneType { MainMenu, UserInterface, HUD, Cinematic, Environment, Tooling }

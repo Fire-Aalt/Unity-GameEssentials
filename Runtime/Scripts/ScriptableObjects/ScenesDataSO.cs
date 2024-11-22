@@ -29,6 +29,7 @@ namespace RenderDream.GameEssentials
 
         [Title("Scenes")] public SceneGroup[] sceneGroups;
 
+#if UNITY_EDITOR
         private void OnValidate()
         {
             foreach (var group in sceneGroups)
@@ -36,5 +37,17 @@ namespace RenderDream.GameEssentials
                 group.Validate();
             }
         }
+
+#if UNITY_ENTITIES
+        [Button]
+        private void ValidateSubScenes()
+        {
+            foreach (var group in sceneGroups)
+            {
+                group.ValidateSubScenes();
+            }
+        }
+#endif
+#endif
     }
 }

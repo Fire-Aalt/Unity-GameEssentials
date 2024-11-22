@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using RenderDream.GameEssentials;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -29,7 +30,7 @@ namespace HierarchyRestore
 
         private static void OnEditorSceneManagerSceneOpened(Scene scene, OpenSceneMode mode)
         {
-            if (!GameEssentialsSettingsProvider.RestoreHierarchyEnabled)
+            if (!GameEssentialsSettingsProvider.RestoreHierarchyEnabled || !scene.isLoaded)
             {
                 return;
             }
@@ -48,3 +49,4 @@ namespace HierarchyRestore
         }
     }
 }
+#endif

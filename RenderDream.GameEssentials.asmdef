@@ -13,7 +13,8 @@
         "GUID:5f3cf485eb0554709a8abbeace890c86",
         "GUID:e0cd26848372d4e5c891c569017e11f1",
         "GUID:69448af7b92c7f342b298e06a37122aa",
-        "GUID:61431be5104c24137b41fcf2264ef434"
+        "GUID:61431be5104c24137b41fcf2264ef434",
+        "GUID:d8b63aba1907145bea998dd612889d6b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -22,6 +23,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.entities",
+            "expression": "1",
+            "define": "UNITY_ENTITIES"
+        }
+    ],
     "noEngineReferences": false
 }

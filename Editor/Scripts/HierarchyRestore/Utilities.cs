@@ -1,5 +1,7 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -7,13 +9,31 @@ using Object = UnityEngine.Object;
 
 namespace HierarchyRestore
 {
-    public class Utilities
+    public static class Utilities
     {
+        static EditorWindow hierarchyWindow
+        {
+            get
+            {
+                if (_hierarchyWindow != null && _hierarchyWindow.GetType() != t_SceneHierarchyWindow) // happens on 2022.3.22f1 with enter playmode options on
+                    _hierarchyWindow = null;
+
+                if (_hierarchyWindow == null)
+                    _hierarchyWindow = Resources.FindObjectsOfTypeAll(t_SceneHierarchyWindow).FirstOrDefault() as EditorWindow;
+
+                return _hierarchyWindow;
+
+            }
+        }
+        static EditorWindow _hierarchyWindow;
+        
+        static Type t_SceneHierarchyWindow = typeof(Editor).Assembly.GetType("UnityEditor.SceneHierarchyWindow");
+        
         public static ulong GetGameObjectUniqueID(GameObject o)
         {
             return GlobalObjectId.GetGlobalObjectIdSlow(o).targetObjectId;
         }
-
+        
         /// <summary>
         /// Get a list of all GameObjects which are expanded (aka unfolded) in the Hierarchy view.
         /// </summary>
@@ -37,6 +57,7 @@ namespace HierarchyRestore
         static void SetExpanded(GameObject go, bool expand)
         {
             object sceneHierarchy = GetSceneHierarchy();
+            if (sceneHierarchy == null) return;
 
             MethodInfo methodInfo = sceneHierarchy
                 .GetType()
@@ -47,14 +68,13 @@ namespace HierarchyRestore
 
         public static object GetSceneHierarchy()
         {
-            EditorWindow window = GetHierarchyWindow();
-            object sceneHierarchy = null;
+            object sceneHierarchy;
             try
             {
                 sceneHierarchy = typeof(EditorWindow).Assembly
                     .GetType("UnityEditor.SceneHierarchyWindow")
                     .GetProperty("sceneHierarchy")
-                    .GetValue(window);
+                    ?.GetValue(hierarchyWindow);
             }
 #pragma warning disable 0168 // suppress value not used warning
             catch (Exception e)
@@ -66,13 +86,7 @@ namespace HierarchyRestore
             
             return sceneHierarchy;
         }
-
-        private static EditorWindow GetHierarchyWindow()
-        {
-            // For it to open, so that it the current focused window.
-            EditorApplication.ExecuteMenuItem("Window/General/Hierarchy");
-            return EditorWindow.focusedWindow;
-        }
+        
 
         public static void ExpandHeirarchy(HashSet<ulong> expandedGameObjectsIds)
         {
@@ -88,3 +102,4 @@ namespace HierarchyRestore
         }
     }
 }
+#endif

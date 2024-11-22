@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
 using Unity.Entities;
-using Unity.Scenes;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
-using Hash128 = Unity.Entities.Hash128;
 using SceneReference = Eflatun.SceneReference.SceneReference;
 
 namespace RenderDream.GameEssentials
@@ -45,8 +43,10 @@ namespace RenderDream.GameEssentials
                 loadedScenes.Add(SceneManager.GetSceneAt(i).name);
             }
 
+#if UNITY_ENTITIES
             // Load SubScenes before any other scenes
             await LoadEntityScenes(group, SubSceneLoadMode.BeforeSceneGroup, token);
+#endif
 
             var totalScenesToLoad = ActiveSceneGroup.Scenes.Count;
             var operationGroup = new AsyncOperationGroup(totalScenesToLoad);
@@ -84,19 +84,22 @@ namespace RenderDream.GameEssentials
                 await UniTask.Delay(1, true, cancellationToken: token);
             }
 
+#if UNITY_ENTITIES
             await LoadEntityScenes(group, SubSceneLoadMode.AfterSceneGroup, token);
+#endif
 
             OnSceneGroupLoaded.Invoke();
         }
 
+#if UNITY_ENTITIES
         private async UniTask LoadEntityScenes(SceneGroup group, SubSceneLoadMode loadMode, CancellationToken token)
         {
             var subSceneLoaderSystem = World.DefaultGameObjectInjectionWorld.GetOrCreateSystemManaged<SubSceneLoaderSystem>();
             foreach (var subSceneReference in group.SubScenes)
             {
-                if (!subSceneReference.IsSubSceneLoaded && subSceneReference.LoadMode == loadMode)
+                if (subSceneReference.LoadMode == loadMode)
                 {
-                    subSceneLoaderSystem.AddLoadRequest(subSceneReference.RuntimeHash);
+                    subSceneLoaderSystem.TryAddLoadRequest(subSceneReference.RuntimeHash);
                 }
             }
             
@@ -105,6 +108,7 @@ namespace RenderDream.GameEssentials
                 await UniTask.Delay(1, true, cancellationToken: token);
             }
         }
+#endif
 
         private void HandleSceneLoaded(SceneData sceneData)
         {
@@ -199,44 +203,4 @@ namespace RenderDream.GameEssentials
             Handles = new List<AsyncOperationHandle<SceneInstance>>(initialCapacity);
         }
     }
-    
-    
-    public partial class SubSceneLoaderSystem : SystemBase
-    {
-        protected override void OnUpdate()
-        {
-            
-        }
-
-        public void AddLoadRequest(Hash128 subSceneHash)
-        {
-            var loadProgressEntity = SceneSystem.LoadSceneAsync(World.Unmanaged, subSceneHash);
-            
-            var dataEntity = EntityManager.CreateEntity();
-            EntityManager.AddComponentData(dataEntity, new SubSceneLoadRequest
-            {
-                Value = loadProgressEntity
-            });
-        }
-
-        public bool AreAllRequestedSubScenesLoaded()
-        {
-            var requests = 0;
-            foreach (var requestRO in SystemAPI.Query<RefRO<SubSceneLoadRequest>>())
-            {
-                if (SceneSystem.GetSceneStreamingState(World.Unmanaged, requestRO.ValueRO.Value) !=
-                    SceneSystem.SceneStreamingState.LoadedSuccessfully)
-                {
-                    requests++;
-                }
-            }
-            return requests == 0;
-        }
-    }
-
-    public struct SubSceneLoadRequest : IComponentData
-    {
-        public Entity Value;
-    }
-
 }

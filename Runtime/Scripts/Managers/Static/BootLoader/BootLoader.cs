@@ -44,9 +44,9 @@ namespace RenderDream.GameEssentials
                 Debug.LogWarning("Unknown dependencies found. BootLoader is inactive");
                 return;
             }
-
+            
             await UniTask.WaitUntil(() => SceneLoader.Current != null);
-            await SceneLoader.Current.LoadSceneGroup(firstSceneGroupIndex, false, SceneTransition.TransitionOut);
+            await SceneLoader.Current.LoadSceneGroup(firstSceneGroupIndex, false, SceneTransition.TransitionOut).SuppressCancellationThrow();
         }
 
         private static int GetFirstSceneGroupIndex(SceneGroup[] sceneGroups)

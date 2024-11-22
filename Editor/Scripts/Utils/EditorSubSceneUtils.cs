@@ -1,3 +1,4 @@
+#if UNITY_ENTITIES && UNITY_EDITOR
 using System.Collections.Generic;
 using Unity.Scenes;
 using Unity.Scenes.Editor;
@@ -7,6 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace RenderDream.GameEssentials
 {
+            
     [InitializeOnLoad]
     public static class EditorSubSceneUtils
     {
@@ -28,7 +30,7 @@ namespace RenderDream.GameEssentials
 
         private static void HandleSceneOpened(Scene scene, OpenSceneMode mode)
         {
-            if (!GameEssentialsSettingsProvider.OpenSubScenesEnabled) return;
+            if (!GameEssentialsSettingsProvider.OpenSubScenesEnabled || !scene.isLoaded) return;
             
             OpenSubScenes(scene);
         }
@@ -55,4 +57,4 @@ namespace RenderDream.GameEssentials
         }
     }
 }
-
+#endif
