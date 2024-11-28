@@ -2,6 +2,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.U2D;
 
 namespace Game
 {
@@ -30,9 +31,9 @@ namespace Game
             }
         }
 
-        public static void EnsureValidFolder(string path)
+        public static void EnsureValidFolder(string assetPath)
         {
-            var folderPath = GetFolderPath(path);
+            var folderPath = GetFolderPath(assetPath);
             if (AssetDatabase.IsValidFolder(folderPath)) return;
             
             Directory.CreateDirectory(folderPath);
@@ -41,6 +42,10 @@ namespace Game
 
         private static string GetFolderPath(string path)
         {
+            if (Directory.Exists(path))
+            {
+                return path;
+            }
             var folderPath = Directory.GetParent(path).FullName;
             return "Assets" + folderPath[Application.dataPath.Length..];
         }
@@ -83,11 +88,11 @@ namespace Game
                 {
                     optionalPath = optionalPath.TrimEnd('/');
                 }
-                guids = AssetDatabase.FindAssets("t:" + typeof (T),new[] { optionalPath });
+                guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}",new[] { optionalPath });
             }
             else
             {
-                guids = AssetDatabase.FindAssets("t:" + typeof (T));
+                guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
             }
             var objectList = new T[guids.Length];
 
