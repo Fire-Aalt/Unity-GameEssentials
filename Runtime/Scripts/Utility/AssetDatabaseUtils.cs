@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -123,6 +124,21 @@ namespace Game
             }
 
             return pathList;
+        }
+
+        public static List<T> LoadAllPrefabsWithComponent<T>() where T : Component
+        {
+            var prefabs = LoadAllAssetsOfType<GameObject>();
+            
+            var list = new List<T>(64);
+            foreach (var prefab in prefabs)
+            {
+                if (prefab.TryGetComponent(out T component))
+                {
+                    list.Add(component);
+                }
+            }
+            return list;
         }
     }
 }
