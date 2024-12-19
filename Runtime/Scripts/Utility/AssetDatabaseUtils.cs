@@ -41,7 +41,7 @@ namespace Game
             AssetDatabase.Refresh();
         }
 
-        private static string GetFolderPath(string path)
+        public static string GetFolderPath(string path)
         {
             if (Directory.Exists(path))
             {
