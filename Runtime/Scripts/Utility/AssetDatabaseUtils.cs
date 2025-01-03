@@ -40,6 +40,28 @@ namespace Game
             Directory.CreateDirectory(folderPath);
             AssetDatabase.Refresh();
         }
+        
+        public static T CreateNewScriptableObjectAsset<T>(string defaultName, ScriptableObject caller) where T : ScriptableObject
+        {
+            var instance = ScriptableObject.CreateInstance<T>();
+            var assetPath = AssetDatabase.GetAssetPath(caller);
+            var folderPath = GetFolderPath(assetPath);
+            
+            var i = 0;
+            var waveAssetPath = folderPath + $"/{defaultName}.asset";
+            while (AssetDatabase.AssetPathExists(waveAssetPath))
+            {
+                var iStr = '_' + i.ToString();
+                if (i == 0) iStr = "";
+                
+                waveAssetPath = waveAssetPath.Remove(waveAssetPath.Length - 6 - iStr.Length, 6 + iStr.Length);
+                waveAssetPath += $"_{i}.asset";
+                i++;
+            }
+            SaveAssetToDatabase(instance, waveAssetPath);
+
+            return instance;
+        }
 
         public static string GetFolderPath(string path)
         {
