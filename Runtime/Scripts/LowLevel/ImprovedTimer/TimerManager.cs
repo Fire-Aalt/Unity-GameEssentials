@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using KrasCore.Runtime;
+using KrasCore;
 
 namespace RenderDream.GameEssentials
 {
