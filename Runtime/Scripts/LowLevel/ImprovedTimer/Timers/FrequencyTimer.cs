@@ -1,6 +1,6 @@
 using System;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     /// <summary>
     /// Timer that ticks at a specific frequency. (N times per second)

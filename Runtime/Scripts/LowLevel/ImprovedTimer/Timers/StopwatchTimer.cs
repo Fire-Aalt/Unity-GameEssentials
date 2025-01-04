@@ -1,4 +1,4 @@
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     /// <summary>
     /// Timer that goes from 0 to infinity.

@@ -13,7 +13,7 @@ using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using SceneReference = Eflatun.SceneReference.SceneReference;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public class SceneGroupManager
     {

@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Eflatun.SceneReference;
+using KrasCore.Essentials.Editor;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public static class BootLoader
     {

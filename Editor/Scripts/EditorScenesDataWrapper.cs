@@ -1,6 +1,6 @@
 ﻿
 #if UNITY_EDITOR
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials.Editor
 {
     public static class EditorScenesDataWrapper
     {

@@ -7,10 +7,11 @@ using UnityEngine.SceneManagement;
 using SceneReference = Eflatun.SceneReference.SceneReference;
 
 #if UNITY_EDITOR
+using KrasCore.Essentials.Editor;
 using UnityEditor.SceneManagement;
 #endif
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     [Serializable]
     public class SceneGroup

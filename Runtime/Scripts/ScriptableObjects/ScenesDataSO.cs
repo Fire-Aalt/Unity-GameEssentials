@@ -3,7 +3,7 @@ using Eflatun.SceneReference;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     [CreateAssetMenu(menuName = "Data/Scenes Data")]
     public class ScenesDataSO : ScriptableObject

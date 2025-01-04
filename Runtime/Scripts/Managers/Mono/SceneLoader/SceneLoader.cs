@@ -5,7 +5,7 @@ using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     [RequireComponent(typeof(SceneTransitionManager))]
     public class SceneLoader : Singleton<SceneLoader>

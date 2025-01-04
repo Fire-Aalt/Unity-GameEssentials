@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public static class GameEssentialsDebug
     {

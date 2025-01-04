@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials.Editor
 {
     public class GameEssentialsSettingsProvider : SettingsProvider
     {

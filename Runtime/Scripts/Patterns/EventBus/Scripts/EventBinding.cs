@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public interface IEventBinding<T> {
         public Action<T> OnEvent { get; set; }

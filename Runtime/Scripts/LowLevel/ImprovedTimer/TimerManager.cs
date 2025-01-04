@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using KrasCore;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public static class TimerManager
     {

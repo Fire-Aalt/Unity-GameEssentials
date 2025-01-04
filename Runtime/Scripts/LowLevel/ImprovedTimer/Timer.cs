@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public abstract class Timer : IDisposable
     {

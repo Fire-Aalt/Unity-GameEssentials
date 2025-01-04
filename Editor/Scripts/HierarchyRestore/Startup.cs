@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-using RenderDream.GameEssentials;
+using KrasCore.Essentials.Editor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;

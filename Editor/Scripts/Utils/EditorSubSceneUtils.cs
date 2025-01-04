@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials.Editor
 {
             
     [InitializeOnLoad]

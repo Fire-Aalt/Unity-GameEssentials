@@ -6,7 +6,7 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using UnityEditor;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials.Editor
 {
     [InitializeOnLoad]
     public static class EditorBootLoader

@@ -5,7 +5,7 @@ using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public class SceneTransitionManager : MonoBehaviour
     {

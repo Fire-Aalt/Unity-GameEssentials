@@ -1,6 +1,6 @@
 using System;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     /// <summary>
     /// Timer that counts down from a specific value to zero.

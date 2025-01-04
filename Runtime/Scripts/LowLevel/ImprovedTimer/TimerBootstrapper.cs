@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.LowLevel;
 using UnityEngine.PlayerLoop;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     internal static class TimerBootstrapper
     {

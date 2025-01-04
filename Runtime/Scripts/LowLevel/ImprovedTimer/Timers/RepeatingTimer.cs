@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     /// <summary>
     /// Timer that counts in intervals that can be changed on the fly.

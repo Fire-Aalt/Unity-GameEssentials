@@ -9,7 +9,7 @@ using Hash128 = Unity.Entities.Hash128;
 using UnityEditor;
 #endif
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     [Serializable]
     public class SubSceneReference

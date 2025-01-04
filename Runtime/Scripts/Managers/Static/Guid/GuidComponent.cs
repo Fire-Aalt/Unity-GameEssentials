@@ -11,7 +11,7 @@ using UnityEditor.SceneManagement;
 // This component gives a GameObject a stable, non-replicatable Globally Unique IDentifier.
 // It can be used to editorReference a specific instance of an object no matter where it is.
 // This can also be used for other systems, such as Save/Load game
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     [ExecuteInEditMode, DisallowMultipleComponent]
     public class GuidComponent : MonoBehaviour, ISerializationCallbackReceiver

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Scenes;
 
-namespace RenderDream.GameEssentials
+namespace KrasCore.Essentials
 {
     public partial class SubSceneLoaderSystem : SystemBase
     {
