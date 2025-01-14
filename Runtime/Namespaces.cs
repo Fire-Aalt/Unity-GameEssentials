@@ -1,0 +1,4 @@
+namespace KrasCore.Essentials.Editor
+{
+
+}
