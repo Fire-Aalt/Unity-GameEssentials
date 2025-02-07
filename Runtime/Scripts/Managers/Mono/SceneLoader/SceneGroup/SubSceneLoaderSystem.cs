@@ -1,25 +1,65 @@
 #if UNITY_ENTITIES
+using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Scenes;
 
 namespace KrasCore.Essentials
 {
+    public struct SubSceneLoaderSingleton : IComponentData, IDisposable
+    {
+        public NativeHashSet<Hash128> UnloadedSubScenes;
+
+        public void Dispose()
+        {
+            UnloadedSubScenes.Dispose();
+        }
+    }
+    
+    [UpdateInGroup(typeof(SceneSystemGroup))]
     public partial class SubSceneLoaderSystem : SystemBase
     {
-        private readonly HashSet<Hash128> _loadedSubScenes = new();
-        
+        private readonly Dictionary<Hash128, Entity> _requestEntities = new();
+
+        protected override void OnCreate()
+        {
+            EntityManager.CreateSingleton(new SubSceneLoaderSingleton
+            {
+                UnloadedSubScenes = new NativeHashSet<Hash128>(4, Allocator.Persistent)
+            });
+        }
+
+        protected override void OnDestroy()
+        {
+            SystemAPI.GetSingleton<SubSceneLoaderSingleton>().Dispose();
+        }
+
         protected override void OnUpdate()
         {
-            foreach (var sceneReference in SystemAPI.Query<RefRO<SceneReference>>())
+            var unloadedSubScenes = SystemAPI.GetSingleton<SubSceneLoaderSingleton>().UnloadedSubScenes;
+            
+            unloadedSubScenes.Clear();
+            foreach (var kvp in _requestEntities)
             {
-                _loadedSubScenes.Add(sceneReference.ValueRO.SceneGUID);
+                var request = EntityManager.GetComponentData<SubSceneLoadRequest>(kvp.Value);
+
+                if (!EntityManager.Exists(request.Value))
+                {
+                    unloadedSubScenes.Add(kvp.Key);
+                }
+            }
+
+            foreach (var hash in unloadedSubScenes)
+            {
+                EntityManager.DestroyEntity(_requestEntities[hash]);
+                _requestEntities.Remove(hash);
             }
         }
 
         public void TryAddLoadRequest(Hash128 subSceneHash)
         {
-            if (_loadedSubScenes.Contains(subSceneHash))
+            if (_requestEntities.ContainsKey(subSceneHash))
             {
                 return;
             }
@@ -31,6 +71,8 @@ namespace KrasCore.Essentials
             {
                 Value = loadProgressEntity
             });
+            
+            _requestEntities.Add(subSceneHash, dataEntity);
         }
 
         public bool AreAllRequestedSubScenesLoaded()
@@ -38,8 +80,8 @@ namespace KrasCore.Essentials
             var requests = 0;
             foreach (var requestRO in SystemAPI.Query<RefRO<SubSceneLoadRequest>>())
             {
-                if (SceneSystem.GetSceneStreamingState(World.Unmanaged, requestRO.ValueRO.Value) !=
-                    SceneSystem.SceneStreamingState.LoadedSuccessfully)
+                var state = SceneSystem.GetSceneStreamingState(World.Unmanaged, requestRO.ValueRO.Value);
+                if (state != SceneSystem.SceneStreamingState.LoadedSuccessfully)
                 {
                     requests++;
                 }

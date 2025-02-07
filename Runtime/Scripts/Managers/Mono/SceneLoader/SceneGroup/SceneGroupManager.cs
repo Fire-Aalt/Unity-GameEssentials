@@ -152,10 +152,7 @@ namespace KrasCore.Essentials
             {
                 var operation = SceneManager.UnloadSceneAsync(scene);
                 if (operation == null) continue;
-
                 operationGroup.Operations.Add(operation);
-
-                OnSceneUnloaded.Invoke(scene);
             }
 
             foreach (var handle in _handleGroup.Handles)
@@ -171,6 +168,11 @@ namespace KrasCore.Essentials
             while (!operationGroup.IsDone)
             {
                 await UniTask.Delay(1, cancellationToken: token);
+            }
+            
+            foreach (var scene in scenesToUnload)
+            {
+                OnSceneUnloaded.Invoke(scene);
             }
 
             // Optional: UnloadUnusedAssets - unloads all unused assets from memory
