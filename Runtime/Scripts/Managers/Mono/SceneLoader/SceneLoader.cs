@@ -30,6 +30,7 @@ namespace KrasCore.Essentials
 
             if (debugLogs)
             {
+                SceneGroupManager.OnSceneInfo += GameEssentialsDebug.Log;
                 SceneGroupManager.OnSceneLoaded += sceneName => GameEssentialsDebug.Log("Loaded: " + sceneName);
                 SceneGroupManager.OnSceneUnloaded += sceneName => GameEssentialsDebug.Log("Unloaded: " + sceneName);
                 SceneGroupManager.OnSceneGroupLoaded += () => GameEssentialsDebug.Log($"Scene group '{SceneGroupManager.ActiveSceneGroup.GroupName}' loaded");
