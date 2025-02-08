@@ -27,7 +27,7 @@ namespace KrasCore.Essentials
         
         public SceneGroup ActiveSceneGroup { get; private set; }
 
-        public async UniTask LoadScenes(SceneGroup group, IProgress<float> progress, bool reloadDupScenes, int loadDelay, CancellationToken token)
+        public async UniTask LoadScenes(SceneGroup group, IProgress<float> progress, bool reloadDupScenes, bool restartEntitiesWorld, int loadDelay, CancellationToken token)
         {
             ActiveSceneGroup = group;
             var loadedScenes = new List<string>();
@@ -38,6 +38,13 @@ namespace KrasCore.Essentials
 
             await UnloadScenes(bootLoader.LoadedScene, reloadDupScenes, token);
 
+#if UNITY_ENTITIES
+            if (restartEntitiesWorld)
+            {
+                RestartEntitiesWorld();
+            }
+#endif
+            
             int sceneCount = SceneManager.sceneCount;
             for (var i = 0; i < sceneCount; i++)
             {
@@ -133,6 +140,10 @@ namespace KrasCore.Essentials
                 OnSceneInfo.Invoke("Scene Info: " + scene.path + " | isLoaded: " + scene.isLoaded + " | isSubScene: " + scene.isSubScene);
                 if (!scene.isLoaded || scene == bootloaderScene) continue;
 
+#if UNITY_EDITOR
+                if (scene.isSubScene) continue;
+#endif
+                
                 var scenePath = scene.path;
                 if (ActiveSceneGroup.IsSceneInGroup(scene) && !unloadDupScenes)
                 {
@@ -191,8 +202,19 @@ namespace KrasCore.Essentials
             // Optional: UnloadUnusedAssets - unloads all unused assets from memory
             await Resources.UnloadUnusedAssets();
         }
+        
+        private static void RestartEntitiesWorld()
+        {
+            World.DefaultGameObjectInjectionWorld.Dispose();
+            
+            DefaultWorldInitialization.Initialize("Default World");
+            if (!ScriptBehaviourUpdateOrder.IsWorldInCurrentPlayerLoop(World.DefaultGameObjectInjectionWorld))
+            {
+                ScriptBehaviourUpdateOrder.AppendWorldToCurrentPlayerLoop(World.DefaultGameObjectInjectionWorld);
+            }
+        }
     }
-
+    
     public readonly struct AsyncOperationGroup
     {
         public readonly List<AsyncOperation> Operations;

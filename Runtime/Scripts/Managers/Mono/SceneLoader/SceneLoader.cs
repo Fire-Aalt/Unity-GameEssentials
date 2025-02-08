@@ -40,15 +40,15 @@ namespace KrasCore.Essentials
             IsLoading = false;
         }
 
-        public virtual async UniTask LoadSceneGroup(int index, bool reloadDupScenes, SceneTransition transition)
+        public virtual async UniTask LoadSceneGroup(LoadSceneGroupParams loadParams)
         {
-            if (!IsIndexValid(index) || IsTransitioning) return;
+            if (!IsIndexValid(loadParams.SceneGroupIndex) || IsTransitioning) return;
 
             // Save -> TransitionIn -> FreeAllLoopingSounds
             IsTransitioning = true;
             EventBus<SaveGameEvent>.Raise(new SaveGameEvent());
             var loadingProgress = SceneTransitionManager.InitializeProgressBar();
-            if (transition == SceneTransition.TransitionInAndOut)
+            if (loadParams.Transition == SceneTransition.TransitionInAndOut)
             {
                 await SceneTransitionManager.TransitionIn(destroyCancellationToken);
             }
@@ -58,12 +58,12 @@ namespace KrasCore.Essentials
             // Enable camera -> LoadScenes -> Disable camera
             IsLoading = true;
             SceneTransitionManager.EnableLoadingCamera(true);
-            await SceneGroupManager.LoadScenes(scenesData.sceneGroups[index], loadingProgress, reloadDupScenes, sceneLoadDelay, destroyCancellationToken);
+            await SceneGroupManager.LoadScenes(scenesData.sceneGroups[loadParams.SceneGroupIndex], loadingProgress, loadParams.ReloadDupScenes, loadParams.RestartEntitiesWorld, sceneLoadDelay, destroyCancellationToken);
             SceneTransitionManager.EnableLoadingCamera(false);
             IsLoading = false;
 
             // TransitionOut
-            if (transition == SceneTransition.TransitionOut || transition == SceneTransition.TransitionInAndOut)
+            if (loadParams.Transition == SceneTransition.TransitionOut || loadParams.Transition == SceneTransition.TransitionInAndOut)
             {
                 await SceneTransitionManager.TransitionOut(destroyCancellationToken);
             }
@@ -81,6 +81,14 @@ namespace KrasCore.Essentials
         }
     }
 
+    public struct LoadSceneGroupParams
+    {
+        public int SceneGroupIndex;
+        public SceneTransition Transition;
+        public bool ReloadDupScenes;
+        public bool RestartEntitiesWorld;
+    }
+    
     public enum SceneTransition
     {
         NoTransition,
